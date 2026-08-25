@@ -1,0 +1,4 @@
+# FastAPI 서빙 의존성 (여기에 fastapi, uvicorn 등 추가)
+
+# 로컬 ai 패키지 (임베딩/RAG/모델 추론 코드) 편집 가능 설치
+-e ../ai
