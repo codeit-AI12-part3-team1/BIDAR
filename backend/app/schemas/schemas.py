@@ -1,5 +1,6 @@
 from typing import Generic, Optional, TypeVar
 from pydantic import BaseModel
+from enum import Enum
 
 T = TypeVar("T")
 
@@ -17,7 +18,14 @@ def success(data: Optional[T] = None, msg: str = "success", code: int = 200) -> 
 def error(msg: str = "error", code: int = 500, data: Optional[T] = None) -> BaseResponse[T]:
     return BaseResponse[T](code=code, msg=msg, data=data)
 
-# SSE 전용 Response
+class TokenEvent(str, Enum):
+    FULL = "FULL"
+    SOS = "SOS"
+    TOKEN = "TOKEN"
+    EOS = "EOS"
+
+
 class TokenResponse(BaseModel):
-    event: str
+    event: TokenEvent
     token: str
+
