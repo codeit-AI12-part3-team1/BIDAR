@@ -1,13 +1,16 @@
-from fastapi import APIRouter, HTTPException
+import asyncio
 
-from app.schemas.schemas import BaseResponse, success, error, TokenResponse, TokenEvent
-from app.services.prediction_service import predict
+from fastapi import APIRouter
+from sse_starlette.sse import EventSourceResponse
+
+from app.schemas.schemas import BaseResponse, success, TokenResponse, TokenEvent
+from app.services.prediction_service import predict, predict_streaming
 
 router = APIRouter()
 
 
 @router.post("/chat", response_model=BaseResponse[TokenResponse])
-def evaluate(query: str, use_streaming: bool = False) -> TokenResponse:
+def evaluate(query: str, use_streaming: bool = False):
     if not use_streaming:
         # streaming 미적용 로직
         result = predict(query)
@@ -16,5 +19,15 @@ def evaluate(query: str, use_streaming: bool = False) -> TokenResponse:
             token=result
         ))
     else:
-        # streaming 적용 로직은 추후 구현
-        return error(code=501, msg="스트리밍은 아직 지원하지 않습니다.")
+        # streaming 적용 로직
+        async def event_generator():
+            yield {"data": success(data=TokenResponse(event=TokenEvent.SOS, token="")).model_dump_json()}
+
+            for token in predict_streaming(query):
+                # FIXME: 실제 AI 모듈에서 구현한 방식에 따라 async 처리가 필요 (하단 sleep 제거 후 적용)
+                await asyncio.sleep(0.2)
+                yield {"data": success(data=TokenResponse(event=TokenEvent.TOKEN, token=token)).model_dump_json()}
+
+            yield {"data": success(data=TokenResponse(event=TokenEvent.EOS, token="")).model_dump_json()}
+
+        return EventSourceResponse(event_generator())
