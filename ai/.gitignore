@@ -1,0 +1,44 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+*.egg
+
+# 편집 가능 설치(pip install -e) 시 생성
+src/*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.mypy_cache/
+
+# ===== 원본/전처리 데이터 (용량이 크고 민감할 수 있어 미추적) =====
+data/raw_data/*
+!data/raw_data/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# ===== 벡터 인덱스 =====
+data/vector_store/*
+!data/vector_store/.gitkeep
+*.faiss
+*.index
+
+# ===== 학습된 모델 가중치 / 캐시 =====
+artifacts/
+.cache/
+*.bin
+*.gguf
+*.pt
+*.ckpt
+
+# ===== 환경변수 =====
+.env
+.env.*
+!.env.example
