@@ -23,6 +23,8 @@ backend/
 │       └── schemas.py         # request/response Pydantic 모델, BaseResponse(code/msg/data)
 ├── scripts/
 │   ├── start.sh                # venv 활성화 + uvicorn 실행 (systemd ExecStart용)
+│   ├── stop.sh                 # 서버 종료 (systemd 서비스 stop, 또는 로컬 실행 중인 프로세스 kill)
+│   ├── deploy.sh                # git pull + 의존성 설치 + systemd 재시작 (재배포용)
 │   └── bidar-backend.service    # systemd 유닛 템플릿
 ├── tests/
 │   └── test_api/
@@ -90,3 +92,27 @@ sudo systemctl enable --now bidar-backend
 ```
 
 `scripts/start.sh`가 `.venv` 활성화 후 `uvicorn app.main:app`을 실행하며, `Restart=on-failure`로 크래시 시 자동 재시작됩니다.
+
+### 재배포 (코드 업데이트 시)
+
+최초 1회 systemd 등록이 끝난 뒤, 코드가 바뀌어 다시 배포할 때는 서버에서 아래 한 줄이면 됩니다.
+
+```bash
+bash scripts/deploy.sh
+```
+
+내부적으로 다음을 순서대로 실행합니다.
+
+1. `git pull` — 최신 코드 받기
+2. `.venv` 활성화 후 `pip install -r requirements.txt` — 의존성 갱신 (`-e ../ai`로 `ai` 패키지도 함께 갱신됨)
+3. `sudo systemctl restart bidar-backend` — 서비스 재시작
+4. `sudo systemctl status bidar-backend` — 정상 기동 확인
+
+서버에 로컬로 고친 내용이 있으면 `git pull` 단계에서 충돌할 수 있으니, 배포 전에 서버에서 직접 코드를 수정한 게 없는지 확인해야 합니다. `sudo`를 쓰므로 처음 실행 시 비밀번호를 물어볼 수 있습니다.
+
+서비스를 완전히 멈추기만 하고 싶을 때는 `bash scripts/stop.sh`를 사용합니다 (systemd 등록 여부를 자동으로 감지해 `systemctl stop` 또는 프로세스 직접 종료 중 알맞은 방식을 씁니다).
+
+### 트러블슈팅
+
+- **`status=217/USER`**: `bidar-backend.service`의 `User=`에 지정한 계정이 서버에 없는 경우입니다. `WorkingDirectory` / `ExecStart` / `User`를 실제 배포 경로·계정으로 수정했는지 확인하세요.
+- **`status=203/EXEC`**: `ExecStart`로 지정한 스크립트(`start.sh`)에 실행 권한이 없는 경우입니다. `chmod +x scripts/start.sh` 후 `sudo systemctl daemon-reload && sudo systemctl restart bidar-backend`로 재시도하세요.
