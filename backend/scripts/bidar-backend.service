@@ -6,11 +6,11 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/bidar/backend
-ExecStart=/opt/bidar/backend/scripts/start.sh
+WorkingDirectory=/home/spai1220/BIDAR/backend
+ExecStart=/home/spai1220/BIDAR/backend/scripts/start.sh
 Restart=on-failure
 RestartSec=5
-User=bidar
+User=spai1220
 
 [Install]
 WantedBy=multi-user.target
