@@ -12,6 +12,9 @@ dependencies = [
     "transformers>=4.51",
     "accelerate>=0.30",
     "autoawq",
+    "chromadb",
+    "sentence-transformers",
+    "openai",
 ]
 
 [tool.setuptools.packages.find]
