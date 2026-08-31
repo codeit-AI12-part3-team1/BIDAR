@@ -43,6 +43,11 @@ DEFAULT_TOP_P = 1.0
 DEFAULT_MAX_TOKENS = 1024
 DEFAULT_ENABLE_THINKING = True
 
+# 멀티턴 — 직전 대화를 몇 턴까지, 몇 글자까지 프롬프트에 넣을지.
+# 컨텍스트 윈도우(32,768)를 hits 가 이미 상당 부분 쓰므로 히스토리는 작게 잡는다.
+DEFAULT_MAX_HISTORY_TURNS = 3      # user+assistant 한 쌍을 1턴으로 센다
+DEFAULT_MAX_HISTORY_CHARS = 2000   # 잘라낸 뒤 남은 히스토리 글자 수 상한
+
 _PROMPTS_DIR = Path(__file__).parent / "prompts"
 SYSTEM_PROMPT = (_PROMPTS_DIR / "system_prompt.txt").read_text(encoding="utf-8")
 USER_TEMPLATE = (_PROMPTS_DIR / "user_template.txt").read_text(encoding="utf-8")
@@ -115,6 +120,46 @@ def _build_context_block(hits: list[dict]) -> str:
     return "\n\n".join(parts)
 
 
+def _normalize_history(
+    history: list[dict] | None,
+    max_turns: int = DEFAULT_MAX_HISTORY_TURNS,
+    max_chars: int = DEFAULT_MAX_HISTORY_CHARS,
+) -> list[dict]:
+    """대화 히스토리를 chat message 목록으로 정규화한다.
+
+    - role 이 user/assistant 가 아닌 항목, content 가 비었거나 공백뿐인 항목은 버린다.
+    - 최근 `max_turns` 턴(= user+assistant 2개 메시지)만 남긴다.
+    - 그래도 총 글자 수가 `max_chars` 를 넘으면 오래된 메시지부터 더 버린다.
+    - 자르고 나서 맨 앞이 assistant 면 짝이 깨진 것이므로 그 메시지를 버린다.
+
+    history 가 None 이거나 비면 빈 목록을 돌려준다 — 기존 단발 호출과 동일하게 동작한다.
+    """
+    if not history:
+        return []
+
+    clean = []
+    for h in history:
+        if not isinstance(h, dict):
+            continue
+        role = h.get("role")
+        content = (h.get("content") or "").strip()
+        if role in ("user", "assistant") and content:
+            clean.append({"role": role, "content": content})
+
+    if not clean or max_turns <= 0:
+        return []
+
+    keep = clean[-(max_turns * 2):]
+
+    while keep and sum(len(m["content"]) for m in keep) > max_chars:
+        keep.pop(0)
+
+    while keep and keep[0]["role"] == "assistant":
+        keep.pop(0)
+
+    return keep
+
+
 # ---------------------------------------------------------------------------
 # 출력 파싱
 # (Qwen3는 <think>...</think> 를 정상적으로 열고 닫지만, 방어적으로
@@ -182,6 +227,9 @@ def generate_answer(
     temperature: float = DEFAULT_TEMPERATURE,
     top_p: float = DEFAULT_TOP_P,
     max_tokens: int = DEFAULT_MAX_TOKENS,
+    history: list[dict] | None = None,
+    max_history_turns: int = DEFAULT_MAX_HISTORY_TURNS,
+    max_history_chars: int = DEFAULT_MAX_HISTORY_CHARS,
 ) -> dict:
     """질문 1건 + retriever가 이미 검색한 hits 1건을 받아 답변 1건을 만든다.
 
@@ -195,6 +243,14 @@ def generate_answer(
         `top_k` 개까지만 쓰고 나머지는 버린다.
     document_id : str, optional
         대상 문서 ID. 프롬프트에 표기용으로만 쓰인다.
+    history : list[dict], optional
+        직전 대화. `[{"role": "user"|"assistant", "content": str}, ...]` 형태다.
+        후속 질문("그럼 그 기간은?")의 지시대상을 모델이 찾을 수 있도록 system 과
+        현재 질문 사이에 chat message 로 끼워 넣는다. None 이면 기존 단발 호출과
+        완전히 동일한 messages 가 만들어진다.
+    max_history_turns, max_history_chars : optional
+        히스토리 상한. 최근 turns 턴만 남기고, 그래도 chars 를 넘으면 오래된
+        메시지부터 버린다. 기본 3턴 / 2000자.
     top_k, enable_thinking, temperature, top_p, max_tokens : optional
         기본값은 베이스라인 노트북에서 확정한 값이다
         (top_k=5, temperature=0.1, thinking ON).
@@ -214,8 +270,10 @@ def generate_answer(
         load_model()
 
     norm_hits = _normalize_hits(hits, top_k)
+    norm_history = _normalize_history(history, max_history_turns, max_history_chars)
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
+        *norm_history,
         {"role": "user", "content": USER_TEMPLATE.format(
             document_id=document_id or "(미지정)",
             context_block=_build_context_block(norm_hits),
