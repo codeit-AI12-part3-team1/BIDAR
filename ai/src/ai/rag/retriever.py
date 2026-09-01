@@ -1,4 +1,4 @@
-"""ai.rag.retriever — 벡터 검색 (Chroma + KURE-v1 Dense Retrieval).
+"""ai.rag.retriever - 벡터 검색 (Chroma + KURE-v1 Dense Retrieval).
 
     from ai.rag.retriever import retrieve
 
@@ -7,6 +7,9 @@
 Chroma 컬렉션과 embedder는 첫 호출 때 한 번만 로드되어 모듈 전역에 캐시된다
 (ai.rag.chain.load_model() 과 동일한 패턴). 색인은 미리
 `python -m ai.scripts.build_index` 로 구축돼 있어야 한다.
+
+색인 경로에 ASCII 밖 문자(한글 등)가 있으면 chromadb 가 HNSW 색인을 못 연다.
+load_retriever() 가 그 경우를 먼저 걸러 에러 메시지로 알린다 (2026-09-01 실측).
 """
 
 from __future__ import annotations
@@ -19,10 +22,11 @@ from typing import Any
 import chromadb
 
 from ai.embeddings.embedder import KureEmbedder
+from ai.ingestion.indexer import DEFAULT_COLLECTION, assert_index_path_ok
 
 _PACKAGE_ROOT = Path(__file__).resolve().parents[3]  # ai/
 
-COLLECTION_NAME = os.environ.get("AI_RETRIEVER_COLLECTION", "rfp_chunks")
+COLLECTION_NAME = os.environ.get("AI_RETRIEVER_COLLECTION", DEFAULT_COLLECTION)
 PERSIST_DIR = os.environ.get(
     "AI_RETRIEVER_PERSIST_DIR", str(_PACKAGE_ROOT / "data" / "vector_store")
 )
@@ -31,7 +35,7 @@ EMBEDDER_DEVICE = os.environ.get("AI_RETRIEVER_DEVICE", "cuda")
 DEFAULT_TOP_K = 5
 
 # ---------------------------------------------------------------------------
-# 컬렉션 / embedder 전역 캐시 — 첫 호출 때만 로드한다
+# 컬렉션 / embedder 전역 캐시 - 첫 호출 때만 로드한다
 # ---------------------------------------------------------------------------
 
 _collection: Any | None = None
@@ -47,8 +51,13 @@ def load_retriever() -> None:
     global _collection, _embedder
     if _collection is not None:
         return
+    assert_index_path_ok(PERSIST_DIR)
     client = chromadb.PersistentClient(path=PERSIST_DIR)
-    _collection = client.get_collection(COLLECTION_NAME)
+    collection = client.get_collection(COLLECTION_NAME)
+    # get_collection 은 sqlite 만 읽으므로 여기서 성공해도 색인이 온전하다는 뜻은 아니다.
+    # count() 가 HNSW 를 실제로 연다. 기동 시점에 한 번 확인해 둔다.
+    collection.count()
+    _collection = collection
     _embedder = KureEmbedder(device=EMBEDDER_DEVICE)
 
 
@@ -58,13 +67,14 @@ def is_retriever_loaded() -> bool:
 
 def retrieve(question: str, top_k: int = DEFAULT_TOP_K, *, document_id: str) -> list[dict]:
     """P0 Selected-document scope: document_id는 필수이며 Hard Filter로 적용된다.
-    (Similarity Score보다 우선 — 다른 문서 결과가 섞이면 RETRIEVAL_SCOPE_ERROR)
+    (Similarity Score보다 우선 - 다른 문서 결과가 섞이면 RETRIEVAL_SCOPE_ERROR)
 
     Returns
     -------
     list[dict]
-        각 dict는 {"chunk_id", "document_id", "score", "text", "section_path",
-        "requirement_ids"} 를 가진다 (ai.rag.chain.generate_answer 의 hits 입력 계약).
+        각 dict는 {"rank", "chunk_id", "document_id", "score", "text", "section_path",
+        "requirement_ids", "block_ids"} 를 가진다
+        (ai.rag.chain.generate_answer 의 hits 입력 계약).
     """
     if not document_id:
         raise ValueError("document_id is required (Selected-document scope, P0)")
@@ -86,12 +96,14 @@ def retrieve(question: str, top_k: int = DEFAULT_TOP_K, *, document_id: str) -> 
         assert metadata["document_id"] == document_id, "RETRIEVAL_SCOPE_ERROR"
         hits.append(
             {
+                "rank": i + 1,
                 "chunk_id": chunk_id,
                 "document_id": metadata["document_id"],
                 "score": 1 - results["distances"][0][i],  # cosine distance -> similarity
                 "text": results["documents"][0][i],
                 "section_path": json.loads(metadata.get("section_path", "[]")),
                 "requirement_ids": json.loads(metadata.get("requirement_ids", "[]")),
+                "block_ids": json.loads(metadata.get("block_ids", "[]")),
             }
         )
     return hits
