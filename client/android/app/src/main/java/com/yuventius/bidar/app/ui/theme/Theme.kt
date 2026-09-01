@@ -1,6 +1,5 @@
-package com.yuventius.bidar.ui.theme
+package com.yuventius.bidar.app.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
