@@ -1,0 +1,6 @@
+대상 문서: {document_id}
+
+검색된 문서 조각:
+{context_block}
+
+질문: {question}
