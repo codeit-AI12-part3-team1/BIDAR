@@ -11,7 +11,7 @@ import java.time.LocalDateTime
  */
 interface ChatRepository {
     fun getChats(documentId: String): Flow<List<Chat>>
-    fun getLastChatDate(documentId: String): Flow<LocalDateTime>
+    fun getLastChatDate(documentId: String): Flow<LocalDateTime?>
     suspend fun insert(chat: Chat): Long
     suspend fun delete(chat: Chat)
 }

@@ -22,8 +22,8 @@ class ChatRepositoryImpl @Inject constructor(
     override fun getChats(documentId: String): Flow<List<Chat>> =
         chatDao.getChats(documentId).map { chats -> chats.map { it.toDomain() } }
 
-    override fun getLastChatDate(documentId: String): Flow<LocalDateTime> =
-        chatDao.getLastChatDate(documentId).map { LocalDateTimeFormatter.toLocalDateTime(it) }
+    override fun getLastChatDate(documentId: String): Flow<LocalDateTime?> =
+        chatDao.getLastChatDate(documentId).map { it?.let(LocalDateTimeFormatter::toLocalDateTime) }
 
     override suspend fun insert(chat: Chat): Long = chatDao.insert(chat.toData())
 

@@ -11,5 +11,6 @@ data class Document (
     val documentId: String = "DOC_000",
     val title: String = "TEST DOCUMENTATION",
     val publishedDate: LocalDateTime = LocalDateTime.now(),
-    val fileExt: String = "hwp"
+    val fileExt: String = "hwp",
+    val lastChatDate: LocalDateTime? = null
 )
