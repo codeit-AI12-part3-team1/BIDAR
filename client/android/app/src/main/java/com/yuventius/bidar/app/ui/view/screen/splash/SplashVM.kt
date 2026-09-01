@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * Class: SplashVM
  * Created by Ven Choi on 2026-09-01
  */
-private const val SPLASH_DURATION_MILLIS = 1500L
+private const val SPLASH_DURATION_MILLIS = 3000L
 
 @HiltViewModel
 class SplashVM @Inject constructor() : OrbitContainerHost<SplashState, SplashState, SplashSideEffect>, ViewModel() {
