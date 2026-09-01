@@ -17,6 +17,7 @@ dependencies = [
     "chromadb==1.5.9",
     "sentence-transformers",
     "openai",
+    "gptqmodel"
 ]
 
 [tool.setuptools.packages.find]
