@@ -29,3 +29,8 @@ class TokenResponse(BaseModel):
     event: TokenEvent
     token: str
 
+class Document(BaseModel):
+    document_id: str
+    title: str
+    published_date: str
+    ext: str
