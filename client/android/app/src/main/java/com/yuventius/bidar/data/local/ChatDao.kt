@@ -25,9 +25,9 @@ interface ChatDao {
     @Query("""
         SELECT chatDate
         FROM chat
-        WHERE documentId = :documentId ORDER BY id DESC
+        WHERE documentId = :documentId ORDER BY id DESC LIMIT 1
     """)
-    fun getLastChatDate(documentId: String): Flow<String>
+    fun getLastChatDate(documentId: String): Flow<String?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(chat: ChatLocal): Long
