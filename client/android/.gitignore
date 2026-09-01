@@ -12,7 +12,6 @@
 /captures
 .externalNativeBuild
 .cxx
-local.properties
 .kotlin
 
 # Signing keys / credentials
@@ -32,3 +31,7 @@ google-services.json
 
 # Heap dumps
 *.hprof
+
+# Logs / profiler traces
+*.log
+*.trace
