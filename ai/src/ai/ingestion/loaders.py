@@ -1,7 +1,7 @@
-"""ai.ingestion.loaders — raw_data → 문서 로딩.
+"""ai.ingestion.loaders - Data Contract JSONL 로딩.
 
 M2 Data Contract(JSONL) 파일을 읽어 dict 리스트로 반환한다.
-필드 스키마는 ai/src/ai/docs/DATA_CONTRACT_v0.1_FROZEN.md 를 따른다.
+필드 스키마는 DATA_CONTRACT_v0.1_FROZEN.md 의 C0 Chunk / Document 스키마를 따른다.
 """
 
 from __future__ import annotations

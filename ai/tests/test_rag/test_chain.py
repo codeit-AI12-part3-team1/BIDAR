@@ -116,3 +116,95 @@ def test_generate_answer_returns_exactly_three_keys(monkeypatch):
     assert out["answer"] == "150일"
     assert out["sources"] == [{"chunk_id": "DEMO_C0_001"}]
     assert out["abstained"] is False
+
+
+# ---------------------------------------------------------------------------
+# 멀티턴 (대화 히스토리) — 인수인계.md §9-5
+# ---------------------------------------------------------------------------
+
+
+def test_normalize_history_filters_and_keeps_recent_turns():
+    h = [
+        {"role": "system", "content": "이건 히스토리가 아니다"},   # role 불일치 -> 버림
+        {"role": "user", "content": "   "},                        # 빈 내용 -> 버림
+        "문자열은 dict 가 아니다",                                  # 타입 불일치 -> 버림
+        {"role": "user", "content": "1턴질문"},
+        {"role": "assistant", "content": "1턴답변"},
+        {"role": "user", "content": "2턴질문"},
+        {"role": "assistant", "content": "2턴답변"},
+        {"role": "user", "content": "3턴질문"},
+        {"role": "assistant", "content": "3턴답변"},
+    ]
+    out = chain._normalize_history(h, max_turns=2, max_chars=10_000)
+    assert [m["content"] for m in out] == ["2턴질문", "2턴답변", "3턴질문", "3턴답변"]
+    assert [m["role"] for m in out] == ["user", "assistant", "user", "assistant"]
+
+
+def test_normalize_history_char_budget_drops_oldest_and_starts_with_user():
+    h = [
+        {"role": "user", "content": "A" * 100},
+        {"role": "assistant", "content": "B" * 100},
+        {"role": "user", "content": "C" * 10},
+        {"role": "assistant", "content": "D" * 10},
+    ]
+    out = chain._normalize_history(h, max_turns=5, max_chars=30)
+    assert [m["content"] for m in out] == ["C" * 10, "D" * 10]
+    assert out[0]["role"] == "user"          # assistant 로 시작하지 않는다
+    assert sum(len(m["content"]) for m in out) <= 30
+
+
+def test_normalize_history_empty_and_degenerate_inputs():
+    assert chain._normalize_history(None) == []
+    assert chain._normalize_history([]) == []
+    assert chain._normalize_history([{"role": "tool", "content": "x"}]) == []
+    assert chain._normalize_history(
+        [{"role": "user", "content": "q"}], max_turns=0) == []
+
+
+class _SpyTok(_FakeTok):
+    """messages 를 그대로 붙잡아 두는 목. 부모의 내용 assert 는 쓰지 않는다."""
+
+    def __init__(self):
+        self.seen = None
+
+    def apply_chat_template(self, messages, tokenize, add_generation_prompt,
+                            enable_thinking):
+        self.seen = [dict(m) for m in messages]
+        return "PROMPT_TEXT"
+
+
+def test_generate_answer_inserts_history_between_system_and_question(monkeypatch):
+    tok = _SpyTok()
+    monkeypatch.setattr(chain, "_tok", tok)
+    monkeypatch.setattr(chain, "_model", _FakeModel())
+
+    out = chain.generate_answer(
+        question="그럼 그 기간은 며칠입니까?",
+        hits=[{"chunk_id": "DEMO_C0_001", "score": 1.0, "text": "150일"}],
+        document_id="DEMO_DOC",
+        history=[
+            {"role": "user", "content": "이 사업의 사업기간은?"},
+            {"role": "assistant", "content": "계약일로부터 150일입니다."},
+        ],
+    )
+
+    assert [m["role"] for m in tok.seen] == ["system", "user", "assistant", "user"]
+    assert tok.seen[0]["content"] == chain.SYSTEM_PROMPT
+    assert tok.seen[1]["content"] == "이 사업의 사업기간은?"
+    assert tok.seen[2]["content"] == "계약일로부터 150일입니다."
+    assert "그럼 그 기간은 며칠입니까?" in tok.seen[3]["content"]
+    assert "DEMO_C0_001" in tok.seen[3]["content"]
+    assert set(out.keys()) == {"answer", "sources", "abstained"}
+
+
+def test_generate_answer_without_history_builds_same_two_messages(monkeypatch):
+    tok = _SpyTok()
+    monkeypatch.setattr(chain, "_tok", tok)
+    monkeypatch.setattr(chain, "_model", _FakeModel())
+
+    chain.generate_answer(
+        question="이 사업의 사업기간은 며칠입니까?",
+        hits=[{"chunk_id": "DEMO_C0_001", "score": 1.0, "text": "150일"}],
+        document_id="DEMO_DOC",
+    )
+    assert [m["role"] for m in tok.seen] == ["system", "user"]
