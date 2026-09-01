@@ -1,8 +1,6 @@
 import asyncio
-
 from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
-
 from app.schemas.schemas import BaseResponse, success, TokenResponse, TokenEvent
 from app.services.prediction_service import predict, predict_streaming
 
