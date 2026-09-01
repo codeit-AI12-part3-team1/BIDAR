@@ -38,6 +38,9 @@ artifacts/
 *.pt
 *.ckpt
 
+# ===== 평가 산출물 =====
+scripts/qualitative_report.md
+
 # ===== 환경변수 =====
 .env
 .env.*
