@@ -30,5 +30,7 @@ class TokenResponse(BaseModel):
     token: str
 
 class Document(BaseModel):
-    file_name: str
     document_id: str
+    title: str
+    published_date: str
+    ext: str
