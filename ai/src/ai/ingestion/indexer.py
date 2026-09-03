@@ -151,4 +151,24 @@ def build_index(
         if progress:
             print(f"  {min(i + batch_size, len(chunks))}/{len(chunks)} 청크 인덱싱")
 
+    _verify_fully_synced(collection, chunks)
     return collection
+
+
+def _verify_fully_synced(collection, chunks: list[dict]) -> None:
+    """get()은 SQLite 기반이라 HNSW 그래프 상태와 무관하게 항상 정확하다.
+    전체 개수와 마지막 청크 id가 실제로 저장됐는지 확인하고, 불완전하면 실패시킨다
+    (조용한 경고로 두면 부분 색인이 그대로 배포될 위험이 있어 raise로 막는다).
+
+    주의: 이건 SQLite 레코드 수만 확인하는 것이라 "검색(query) 가능 여부"까지
+    보장하진 못한다. 자투리가 실제로 검색되는지는 ai/scripts/verify_index_full_query.py
+    로 별도 프로세스에서 전수 확인해야 한다.
+    """
+    stored = collection.get(ids=[chunks[-1]["chunk_id"]])
+    all_ids = collection.get(include=[])["ids"]
+
+    if not stored["ids"] or len(all_ids) != len(chunks):
+        raise RuntimeError(
+            f"색인 미완료: 저장된 개수({len(all_ids)}) != 원본({len(chunks)}). 재인덱싱이 필요합니다."
+        )
+    print(f"  검증 완료 (SQLite 기준): 전체 {len(all_ids)}개 청크 저장 확인됨")

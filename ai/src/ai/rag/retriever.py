@@ -75,6 +75,11 @@ def retrieve(question: str, top_k: int = DEFAULT_TOP_K, *, document_id: str) -> 
         각 dict는 {"rank", "chunk_id", "document_id", "score", "text", "section_path",
         "requirement_ids", "block_ids"} 를 가진다
         (ai.rag.chain.generate_answer 의 hits 입력 계약).
+
+        `rank` 는 DATA_CONTRACT_v0.1_FROZEN.md 5절(Retrieval -> Generation)에 명시된
+        필수 필드다. `block_ids` 는 같은 문서 6절(Generation Output)의
+        `sources[].block_ids` 를 채우는 유일한 출처이고, RETRIEVAL_HANDOFF 3.5절의
+        "엉뚱한 Section 검색 탐지"(검색 품질 진단)에도 쓰인다.
     """
     if not document_id:
         raise ValueError("document_id is required (Selected-document scope, P0)")
@@ -93,7 +98,12 @@ def retrieve(question: str, top_k: int = DEFAULT_TOP_K, *, document_id: str) -> 
     hits = []
     for i, chunk_id in enumerate(results["ids"][0]):
         metadata = results["metadatas"][0][i]
-        assert metadata["document_id"] == document_id, "RETRIEVAL_SCOPE_ERROR"
+        if metadata["document_id"] != document_id:
+            # assert는 `python -O` 실행 시 통째로 사라지므로, P0 하드 필터의
+            # 유일한 방어선을 assert에만 맡기지 않는다.
+            raise RuntimeError(
+                f"RETRIEVAL_SCOPE_ERROR: expected {document_id}, got {metadata['document_id']}"
+            )
         hits.append(
             {
                 "rank": i + 1,
