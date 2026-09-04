@@ -9,25 +9,26 @@ backend/
 ├── app/
 │   ├── main.py                # FastAPI 엔트리포인트
 │   ├── core/
-│   │   ├── config.py          # 환경변수/설정 (pydantic Settings)
+│   │   ├── config.py          # 환경변수/설정 (pydantic Settings) — app_name, log_level, documents_csv_path
 │   │   └── logging.py         # 로깅 설정
 │   ├── api/
 │   │   ├── routes/
 │   │   │   ├── health_check.py  # 헬스체크 엔드포인트 (GET /health)
-│   │   │   ├── chat.py        # 질의응답 엔드포인트 (POST /chat)
-│   │   │   └── search.py      # 검색/추천 엔드포인트 (예정)
-│   │   └── deps.py            # 의존성 주입 (예정)
+│   │   │   ├── chat.py        # 질의응답 엔드포인트 (POST /chat, SSE 스트리밍 지원)
+│   │   │   └── documents.py   # 문서 목록 엔드포인트 (GET /documents)
+│   │   └── deps.py            # 의존성 주입 (현재 비어있음, 예정)
 │   ├── services/
-│   │   └── prediction_service.py  # predict(query) — 현재는 임시 텍스트 반환, 추후 ai.models.predictor 연동
+│   │   ├── prediction_service.py  # predict()/predict_streaming() — ai.models.predictor 연동, use_open_ai=True는 아직 미구현
+│   │   └── document_service.py    # get_documents() — CSV(documents_csv_path)를 읽어 Document 리스트 반환
 │   └── schemas/
-│       └── schemas.py         # request/response Pydantic 모델, BaseResponse(code/msg/data)
+│       └── schemas.py         # request/response Pydantic 모델 — BaseResponse(code/msg/data), TokenEvent/TokenResponse, Document
 ├── scripts/
 │   ├── start.sh                # venv 활성화 + uvicorn 실행 (systemd ExecStart용)
 │   ├── stop.sh                 # 서버 종료 (systemd 서비스 stop, 또는 로컬 실행 중인 프로세스 kill)
 │   ├── deploy.sh                # git pull + 의존성 설치 + systemd 재시작 (재배포용)
 │   └── bidar-backend.service    # systemd 유닛 템플릿
 ├── tests/
-│   └── test_api/
+│   └── test_api/               # 현재 테스트 코드 없음 (디렉터리만 존재)
 ├── requirements.txt            # fastapi 등 + ai 패키지 editable install
 └── .env                        # 현재 사용하는 환경변수 없음, 필요해지면 채우면 됨
 ```
@@ -69,10 +70,11 @@ IntelliJ 등 IDE 실행 설정을 쓸 경우 working directory를 반드시 `bac
 
 ## 엔드포인트
 
-| Method | Path     | 설명                                   |
-|--------|----------|----------------------------------------|
-| GET    | `/health`| 헬스체크 → `{"code": 200, "msg": "success", "data": "ok"}` |
-| POST   | `/chat`  | 질의응답. `query`(str), `use_streaming`(bool, 기본 False). 현재 `prediction_service.predict()`가 임시 텍스트 반환. `use_streaming=True`는 아직 501 |
+| Method | Path        | 설명                                   |
+|--------|-------------|----------------------------------------|
+| GET    | `/health`   | 헬스체크 → `{"code": 200, "msg": "success", "data": "ok"}` |
+| POST   | `/chat`     | 질의응답. 쿼리 파라미터 `query`(str), `document_id`(str), `use_streaming`(bool, 기본 False), `use_open_ai`(bool, 기본 False). `use_streaming=False`면 `BaseResponse[TokenResponse]`(`event=FULL`)를 반환하고, `True`면 SSE(`EventSourceResponse`)로 `SOS` → `TOKEN`(여러 번) → `EOS` 이벤트를 순서대로 스트리밍한다. 내부적으로 `prediction_service.predict()`/`predict_streaming()`이 `ai.models.predictor`를 호출하며, `use_open_ai=True`는 아직 미구현("미구현" 문자열 반환) |
+| GET    | `/documents`| 문서 목록 조회 → `BaseResponse[List[Document]]`. `document_service.get_documents()`가 `settings.documents_csv_path` CSV를 읽어 반환 |
 
 ## 배포 (systemd)
 
