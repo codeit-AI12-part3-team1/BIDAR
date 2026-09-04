@@ -1,0 +1,16 @@
+# 배포 서버 /etc/systemd/system/bidar-backend.service 에 복사해서 사용
+# WorkingDirectory / ExecStart / User는 실제 배포 경로·계정에 맞게 수정
+[Unit]
+Description=BIDAR FastAPI backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/spai1220/BIDAR/backend
+ExecStart=/home/spai1220/BIDAR/backend/scripts/start.sh
+Restart=on-failure
+RestartSec=5
+User=spai1220
+
+[Install]
+WantedBy=multi-user.target

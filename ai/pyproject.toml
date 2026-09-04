@@ -7,7 +7,29 @@ name = "ai"
 version = "0.1.0"
 description = "BIDAR AI package: embedding, RAG, model training/inference"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "torch>=2.1",
+    # transformers>=4.51 이 AutoModelForCausalLM/AutoTokenizer 로딩 시
+    # torchvision 을 요구한다(실측 2026-09-01, VM 기동 중 ModuleNotFoundError).
+    # ai 코드 자체는 이미지 처리를 하지 않지만 transformers 내부 의존성이라 명시한다.
+    "torchvision",
+    "transformers>=4.51",
+    "accelerate>=0.30",
+    "autoawq",
+    # 검색(retrieval) 쪽 의존성. chromadb 는 버전을 고정한다 -
+    # 낮은 버전은 높은 버전이 만든 색인을 열지 못한다(실측 2026-09-01).
+    "chromadb==1.5.9",
+    "sentence-transformers",
+    "openai",
+    "gptqmodel"
+]
+
+[project.optional-dependencies]
+# scripts/ 아래 실험/검증용 스크립트에서만 쓰인다 (배포 패키지에는 포함 안 됨).
+dev = [
+    "numpy",
+    "matplotlib",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
