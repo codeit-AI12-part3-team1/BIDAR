@@ -9,6 +9,10 @@ description = "BIDAR AI package: embedding, RAG, model training/inference"
 requires-python = ">=3.11"
 dependencies = [
     "torch>=2.1",
+    # transformers>=4.51 이 AutoModelForCausalLM/AutoTokenizer 로딩 시
+    # torchvision 을 요구한다(실측 2026-09-01, VM 기동 중 ModuleNotFoundError).
+    # ai 코드 자체는 이미지 처리를 하지 않지만 transformers 내부 의존성이라 명시한다.
+    "torchvision",
     "transformers>=4.51",
     "accelerate>=0.30",
     "autoawq",
@@ -17,7 +21,18 @@ dependencies = [
     "chromadb==1.5.9",
     "sentence-transformers",
     "openai",
+    # KEY.env / .env 에서 API 키를 읽는다. 팀이 키를 파일로 공유하고 있어
+    # chain.load_api_client() 가 환경변수가 비었을 때 이 파일을 찾는다
+    # (규칙은 rfp_rag_generation_baseline_qwen3.ipynb 셀 13 과 동일).
+    "python-dotenv",
     "gptqmodel"
+]
+
+[project.optional-dependencies]
+# scripts/ 아래 실험/검증용 스크립트에서만 쓰인다 (배포 패키지에는 포함 안 됨).
+dev = [
+    "numpy",
+    "matplotlib",
 ]
 
 [tool.setuptools.packages.find]
