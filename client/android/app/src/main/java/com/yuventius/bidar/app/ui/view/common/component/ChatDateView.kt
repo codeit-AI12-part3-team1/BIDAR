@@ -30,7 +30,7 @@ fun ChatDateView (
         modifier = modifier
             .background (
                 color = MidnightIndigo40,
-                shape = RoundedCornerShape(5.dp)
+                shape = RoundedCornerShape(10.dp)
             )
             .padding(4.dp),
         contentAlignment = Alignment.Center
