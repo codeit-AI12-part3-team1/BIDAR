@@ -62,5 +62,5 @@ from ai.rag.chain import generate_answer
 
 ## 파트별 문서
 
-[Retrieval 문서](./RETRIEVAL.md)
-[Generator 문서](./GENERATOR.md)
+- [Retrieval 문서](./RETRIEVAL.md)
+- [Generator 문서](./GENERATOR.md)
