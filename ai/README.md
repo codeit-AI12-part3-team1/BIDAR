@@ -59,3 +59,8 @@ from ai.rag.chain import generate_answer
 - **models / training**: RAG 외 별도 예측 모델의 학습·추론 코드
 - **ingestion**: 원본 데이터를 색인 가능한 형태로 가공하는 배치 파이프라인
 - **scripts**: `ingestion`/`training`을 실행하는 CLI 진입점
+
+## 파트별 문서
+
+[Retrieval 문서](./RETRIEVAL.md)
+[Generator 문서](./GENERATOR.md)
