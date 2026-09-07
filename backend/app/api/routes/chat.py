@@ -8,10 +8,10 @@ router = APIRouter()
 
 
 @router.post("/chat", response_model=BaseResponse[TokenResponse])
-def evaluate(query: str, document_id: str, use_streaming: bool = False):
+def evaluate(query: str, document_id: str, use_streaming: bool = False, use_open_ai: bool = False):
     if not use_streaming:
         # streaming 미적용 로직
-        result = predict(query, document_id)
+        result = predict(query, document_id, use_open_ai=use_open_ai)
         return success(data=TokenResponse(
             event=TokenEvent.FULL,
             token=result
