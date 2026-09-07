@@ -1,6 +1,7 @@
 package com.yuventius.bidar.domain.repository
 
 import com.yuventius.bidar.domain.model.Document
+import java.time.LocalDateTime
 
 /**
  * BIDAR
@@ -9,4 +10,5 @@ import com.yuventius.bidar.domain.model.Document
  */
 interface DocumentRepository {
     suspend fun getDocuments(): List<Document>
+    suspend fun getChatHistory(documents: List<Document>): List<Document>
 }

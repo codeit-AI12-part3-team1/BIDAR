@@ -34,4 +34,7 @@ interface ChatDao {
 
     @Delete
     suspend fun delete(chat: ChatLocal)
+
+    @Query("DELETE FROM chat")
+    suspend fun deleteAll()
 }

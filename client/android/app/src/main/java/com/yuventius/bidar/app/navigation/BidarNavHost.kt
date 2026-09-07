@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.yuventius.bidar.app.ui.view.screen.chat.ChatView
 import com.yuventius.bidar.app.ui.view.screen.home.HomeView
+import com.yuventius.bidar.app.ui.view.screen.setting.SettingView
 import com.yuventius.bidar.app.ui.view.screen.splash.SplashView
 
 /**
@@ -52,6 +53,9 @@ fun BidarNavHost(
             HomeView (
                 onNavigateToChat = { documentId ->
                     navController.navigate(Route.Chat.createRoute(documentId))
+                },
+                onNavigateToSetting = {
+                    navController.navigate(Route.Setting.route)
                 }
             )
         }
@@ -66,6 +70,15 @@ fun BidarNavHost(
                 documentId = documentId,
                 onNavigateBack = { navController.popBackStack() }
             )
+        }
+        composable(
+            route = Route.Setting.route,
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) }
+        ) {
+            SettingView {
+                navController.popBackStack()
+            }
         }
     }
 }

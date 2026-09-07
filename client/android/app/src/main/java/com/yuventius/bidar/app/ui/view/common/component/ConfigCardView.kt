@@ -34,7 +34,7 @@ fun ConfigCardView (
     Row (
         modifier = modifier
             .background(White, shape = RoundedCornerShape(10.dp))
-            .padding(8.dp)
+            .padding(horizontal = 12.dp, vertical = 20.dp)
             .noRippleClickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(15.dp),
         verticalAlignment = Alignment.CenterVertically

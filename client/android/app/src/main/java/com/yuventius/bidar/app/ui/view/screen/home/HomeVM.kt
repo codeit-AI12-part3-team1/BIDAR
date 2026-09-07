@@ -20,7 +20,7 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 @HiltViewModel
 class HomeVM @Inject constructor (
-    val documentRepos: DocumentRepository
+    private val documentRepos: DocumentRepository
 ): OrbitContainerHost<HomeState, HomeState, HomeSideEffect>, ViewModel() {
     override val container = orbitContainer<HomeState, HomeSideEffect>(HomeState()) {
         getDocuments()
@@ -44,5 +44,12 @@ class HomeVM @Inject constructor (
         }
         delay(500L.milliseconds)
         getDocuments()
+    }
+
+    fun refreshChatHistory() = intent {
+        val result = documentRepos.getChatHistory(state.documents)
+        reduce {
+            state.copy(documents = result)
+        }
     }
 }
