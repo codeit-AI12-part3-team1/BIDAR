@@ -25,6 +25,8 @@ object DatabaseModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
+            // TODO: 정식 마이그레이션 전략 도입 전까지, 개발 단계 스키마 변경 시 로컬 채팅 캐시를 초기화
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 
     @Provides

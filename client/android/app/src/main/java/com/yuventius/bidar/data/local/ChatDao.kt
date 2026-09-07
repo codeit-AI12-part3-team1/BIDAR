@@ -1,5 +1,6 @@
 package com.yuventius.bidar.data.local
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -16,11 +17,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ChatDao {
     @Query("""
-        SELECT * 
-        FROM chat 
-        WHERE documentId = :documentId ORDER BY id ASC
+        SELECT *
+        FROM chat
+        WHERE documentId = :documentId ORDER BY id DESC
     """)
-    fun getChats(documentId: String): Flow<List<ChatLocal>>
+    fun getChats(documentId: String): PagingSource<Int, ChatLocal>
 
     @Query("""
         SELECT chatDate
@@ -28,6 +29,9 @@ interface ChatDao {
         WHERE documentId = :documentId ORDER BY id DESC LIMIT 1
     """)
     fun getLastChatDate(documentId: String): Flow<String?>
+
+    @Query("SELECT COUNT(*) FROM chat WHERE documentId = :documentId")
+    suspend fun getChatCount(documentId: String): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(chat: ChatLocal): Long

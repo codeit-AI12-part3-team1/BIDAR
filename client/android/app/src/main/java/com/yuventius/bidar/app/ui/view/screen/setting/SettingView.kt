@@ -16,6 +16,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -29,6 +31,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.yuventius.bidar.app.ui.theme.MidnightIndigo
 import com.yuventius.bidar.app.ui.view.common.component.ConfigCardView
+import com.yuventius.bidar.app.ui.view.common.component.ConfigToggleView
 import com.yuventius.bidar.app.ui.view.common.component.NavHeader
 
 /**
@@ -45,6 +48,8 @@ fun SettingView (
     onBack: () -> Unit = {}
 ) {
     val showDialog = remember { mutableStateOf(false) }
+    val useStreaming by vm.useStreaming.collectAsState()
+    val useOpenAi by vm.useOpenAi.collectAsState()
 
     Column (
         modifier = modifier,
@@ -60,6 +65,20 @@ fun SettingView (
                 .padding(horizontal = 12.dp),
             configTitle = "채팅 기록 초기화"
         ) { showDialog.value = true }
+        ConfigToggleView (
+            modifier = Modifier
+                .padding(horizontal = 12.dp),
+            configTitle = "SSE 모드 활성화",
+            checked = useStreaming,
+            onCheckedChange = vm::setUseStreaming
+        )
+        ConfigToggleView (
+            modifier = Modifier
+                .padding(horizontal = 12.dp),
+            configTitle = "LLM을 Open AI로 변경",
+            checked = useOpenAi,
+            onCheckedChange = vm::setUseOpenAi
+        )
 
         if (showDialog.value) {
             BasicAlertDialog (

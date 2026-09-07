@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yuventius.bidar.app.ui.theme.MidnightIndigo
@@ -27,7 +28,8 @@ import java.time.LocalDateTime
 @Composable
 fun ChatSenderView (
     modifier: Modifier = Modifier,
-    chat: Chat = Chat()
+    chat: Chat = Chat(),
+    showTime: Boolean = true
 ) {
     Column (
         modifier = modifier,
@@ -46,10 +48,12 @@ fun ChatSenderView (
             )
         }
 
-        Text (
-            text = chat.chatDate.formatByDatePattern(DatePattern.CHAT_TIME),
-            fontSize = 10.sp,
-            color = MidnightIndigo60
-        )
+        if (showTime) {
+            Text (
+                text = chat.chatDate.formatByDatePattern(DatePattern.CHAT_TIME),
+                fontSize = 10.sp,
+                color = Color.LightGray
+            )
+        }
     }
 }

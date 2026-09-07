@@ -55,7 +55,7 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 fun HomeView (
     modifier: Modifier = Modifier,
     vm: HomeVM = hiltViewModel(),
-    onNavigateToChat: (String) -> Unit = {},
+    onNavigateToChat: (Document) -> Unit = {},
     onNavigateToSetting: () -> Unit = {}
 ) {
     vm.collectSideEffect {
@@ -82,7 +82,7 @@ fun HomeView (
 fun HomeContent (
     modifier: Modifier = Modifier,
     state: HomeState = HomeState(),
-    onNavigateToChat: (String) -> Unit = {},
+    onNavigateToChat: (Document) -> Unit = {},
     onNavigateToSetting: () -> Unit = {},
     onRefresh: () -> Unit = {}
 ) {
@@ -181,7 +181,7 @@ fun HomeContent (
                                 .fillMaxWidth(),
                             document = document
                         ) {
-                            onNavigateToChat.invoke(document.documentId)
+                            onNavigateToChat.invoke(document)
                         }
                     }
                 }

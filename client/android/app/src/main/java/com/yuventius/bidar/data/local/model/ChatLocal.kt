@@ -16,5 +16,6 @@ data class ChatLocal (
     val id: Long = 0L,
     val documentId: String,
     val msg: String,
-    val chatDate: String
+    val chatDate: String,
+    val sender: String
 )

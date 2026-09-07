@@ -1,6 +1,7 @@
 package com.yuventius.bidar.data.local.model
 
 import com.yuventius.bidar.domain.model.Chat
+import com.yuventius.bidar.domain.model.ChatSender
 import com.yuventius.bidar.domain.util.BaseWrapper
 import com.yuventius.bidar.domain.util.LocalDateTimeFormatter
 
@@ -14,13 +15,15 @@ object ChatWrapper : BaseWrapper<Chat, ChatLocal>() {
         id = id,
         documentId = documentId,
         msg = msg,
-        chatDate = LocalDateTimeFormatter.toTimeString(chatDate)
+        chatDate = LocalDateTimeFormatter.toTimeString(chatDate),
+        sender = sender.name
     )
 
     override fun ChatLocal.toDomain(): Chat = Chat(
         id = id,
         documentId = documentId,
         msg = msg,
-        chatDate = LocalDateTimeFormatter.toLocalDateTime(chatDate)
+        chatDate = LocalDateTimeFormatter.toLocalDateTime(chatDate),
+        sender = ChatSender.valueOf(sender)
     )
 }

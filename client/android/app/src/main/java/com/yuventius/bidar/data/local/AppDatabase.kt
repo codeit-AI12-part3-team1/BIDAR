@@ -9,7 +9,7 @@ import com.yuventius.bidar.data.local.model.ChatLocal
  * Class: AppDatabase
  * Created by Ven Choi on 2026-09-01
  */
-@Database(entities = [ChatLocal::class], version = 1, exportSchema = false)
+@Database(entities = [ChatLocal::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun chatDao(): ChatDao
 }
