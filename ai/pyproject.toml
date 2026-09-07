@@ -21,6 +21,10 @@ dependencies = [
     "chromadb==1.5.9",
     "sentence-transformers",
     "openai",
+    # KEY.env / .env 에서 API 키를 읽는다. 팀이 키를 파일로 공유하고 있어
+    # chain.load_api_client() 가 환경변수가 비었을 때 이 파일을 찾는다
+    # (규칙은 rfp_rag_generation_baseline_qwen3.ipynb 셀 13 과 동일).
+    "python-dotenv",
     "gptqmodel"
 ]
 

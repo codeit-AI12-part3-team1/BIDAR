@@ -1,9 +1,10 @@
 from ai.models.predictor import predict as model_predict
 
-def predict(query: str, document_id: str) -> str:
-    # TODO: ai.models.predictor에 predict 함수가 생기면 아래로 교체
-    return model_predict(query, document_id)
-    # return f"[임시 응답] '{query}'에 대한 답변입니다."
+def predict(query: str, document_id: str, use_open_ai: bool) -> str:
+    if use_open_ai:
+        return model_predict(query, document_id, backend="api")
+    else:
+        return model_predict(query, document_id)
 
 def predict_streaming(query: str, document_id: str):
     # TODO: ai.models.predictor에 predict_streaming 함수가 생기면 아래로 교체
