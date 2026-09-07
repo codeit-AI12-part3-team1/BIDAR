@@ -28,4 +28,6 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun insert(chat: Chat): Long = chatDao.insert(chat.toData())
 
     override suspend fun delete(chat: Chat) = chatDao.delete(chat.toData())
+
+    override suspend fun deleteAll() = chatDao.deleteAll()
 }

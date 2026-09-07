@@ -14,4 +14,5 @@ interface ChatRepository {
     fun getLastChatDate(documentId: String): Flow<LocalDateTime?>
     suspend fun insert(chat: Chat): Long
     suspend fun delete(chat: Chat)
+    suspend fun deleteAll()
 }

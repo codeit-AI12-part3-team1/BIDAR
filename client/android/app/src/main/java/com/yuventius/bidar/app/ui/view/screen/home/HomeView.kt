@@ -32,6 +32,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.yuventius.bidar.R
 import com.yuventius.bidar.app.ui.theme.MidnightIndigo
 import com.yuventius.bidar.app.ui.theme.MidnightIndigo60
@@ -72,6 +74,8 @@ fun HomeView (
             vm.refreshDocuments()
         }
     )
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshChatHistory() }
 }
 
 @Composable

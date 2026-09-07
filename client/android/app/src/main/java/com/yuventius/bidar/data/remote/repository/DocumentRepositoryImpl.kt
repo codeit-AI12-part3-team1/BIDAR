@@ -6,6 +6,7 @@ import com.yuventius.bidar.domain.model.Document
 import com.yuventius.bidar.domain.repository.ChatRepository
 import com.yuventius.bidar.domain.repository.DocumentRepository
 import kotlinx.coroutines.flow.first
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 /**
@@ -22,4 +23,8 @@ class DocumentRepositoryImpl @Inject constructor(
             val document = remote.toDomain()
             document.copy(lastChatDate = chatRepository.getLastChatDate(document.documentId).first())
         }
+
+    override suspend fun getChatHistory(documents: List<Document>): List<Document> = documents.map { document ->
+        document.copy(lastChatDate = chatRepository.getLastChatDate(document.documentId).first())
+    }
 }
