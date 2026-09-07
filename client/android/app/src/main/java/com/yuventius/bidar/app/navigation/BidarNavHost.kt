@@ -1,5 +1,6 @@
 package com.yuventius.bidar.app.navigation
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -61,13 +62,16 @@ fun BidarNavHost(
         }
         composable(
             route = Route.Chat.route,
-            arguments = listOf(navArgument(Route.Chat.ARG_DOCUMENT_ID) { type = NavType.StringType }),
+            arguments = listOf(
+                navArgument(Route.Chat.ARG_DOCUMENT_ID) { type = NavType.StringType },
+                navArgument(Route.Chat.ARG_DOCUMENT_TITLE) { type = NavType.StringType }
+            ),
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) },
             popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) }
         ) { backStackEntry ->
-            val documentId = backStackEntry.arguments?.getString(Route.Chat.ARG_DOCUMENT_ID).orEmpty()
+            val documentTitle = backStackEntry.arguments?.getString(Route.Chat.ARG_DOCUMENT_TITLE).orEmpty().let(Uri::decode)
             ChatView(
-                documentId = documentId,
+                documentTitle = documentTitle,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

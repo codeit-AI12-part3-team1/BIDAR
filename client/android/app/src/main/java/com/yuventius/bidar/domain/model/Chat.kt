@@ -11,5 +11,6 @@ data class Chat (
     val id: Long = -1L,
     val documentId: String = "DOC_000",
     val msg: String = "TEST MSG",
-    val chatDate: LocalDateTime = LocalDateTime.now()
+    val chatDate: LocalDateTime = LocalDateTime.now(),
+    val sender: ChatSender = ChatSender.USER
 )

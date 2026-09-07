@@ -1,5 +1,6 @@
 package com.yuventius.bidar.app.di
 
+import com.yuventius.bidar.data.remote.api.ChatApi
 import com.yuventius.bidar.data.remote.api.DocumentApi
 import dagger.Module
 import dagger.Provides
@@ -13,6 +14,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.create
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 /**
@@ -42,6 +44,10 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(logging)
             .addInterceptor(JsonLoggingInterceptor())
+            .connectTimeout(30, TimeUnit.SECONDS)
+            // 챗봇 답변 생성이 오래 걸릴 수 있어(관측된 최대 2분 30초) 여유 있게 잡는다.
+            .readTimeout(3, TimeUnit.MINUTES)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
@@ -57,4 +63,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideDocumentApi(retrofit: Retrofit): DocumentApi = retrofit.create()
+
+    @Provides
+    @Singleton
+    fun provideChatApi(retrofit: Retrofit): ChatApi = retrofit.create()
 }

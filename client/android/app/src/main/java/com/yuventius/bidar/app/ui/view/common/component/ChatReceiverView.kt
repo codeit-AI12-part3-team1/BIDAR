@@ -35,7 +35,8 @@ import java.time.LocalDateTime
 @Composable
 fun ChatReceiverView (
     modifier: Modifier = Modifier,
-    chat: Chat = Chat()
+    chat: Chat = Chat(),
+    showTime: Boolean = true
 ) {
     Row (
         modifier = modifier,
@@ -73,11 +74,13 @@ fun ChatReceiverView (
                 )
             }
 
-            Text (
-                text = chat.chatDate.formatByDatePattern(DatePattern.CHAT_TIME),
-                fontSize = 10.sp,
-                color = MidnightIndigo60
-            )
+            if (showTime) {
+                Text (
+                    text = chat.chatDate.formatByDatePattern(DatePattern.CHAT_TIME),
+                    fontSize = 10.sp,
+                    color = Color.LightGray
+                )
+            }
         }
     }
 }

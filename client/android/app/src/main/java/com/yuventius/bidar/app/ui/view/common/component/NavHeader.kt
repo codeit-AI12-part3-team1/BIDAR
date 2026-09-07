@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yuventius.bidar.R
@@ -52,8 +53,9 @@ fun NavHeader (
         Text (
             text = title,
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            color = Color.White
+            fontSize = 14.sp,
+            color = Color.White,
+            textAlign = TextAlign.End
         )
     }
 }
