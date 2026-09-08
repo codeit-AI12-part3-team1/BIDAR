@@ -21,7 +21,7 @@
 key.properties
 
 # Firebase / API keys
-google-services.json
+app/google-services.json
 
 # Build outputs
 *.apk
