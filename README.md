@@ -60,10 +60,6 @@
 - [Backend 모듈 문서](backend/README.md)
 - [Client 모듈 문서 (Android)](client/android/README.md)
 
-## 최종 보고서 링크
-
-- [1팀 최종 보고서](https://charming-power-d0c.notion.site/1-_-3d5a35cd00a9808aa7e0cabe17106cbd?source=copy_link)
-
 ## 협업일지 링크
 
 - [최승원 협업일지](https://charming-power-d0c.notion.site/3c7a35cd00a98059a800dc8cf0f6f03e?source=copy_link)
