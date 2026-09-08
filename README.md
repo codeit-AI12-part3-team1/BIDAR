@@ -1,4 +1,4 @@
-# Codeit 12기 Part3 중급 프로젝트
+# BIDAR - Codeit 12기 Part3 중급 프로젝트
 
 ## 프로젝트 개요
 
