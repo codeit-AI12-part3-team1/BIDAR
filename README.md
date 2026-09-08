@@ -62,12 +62,12 @@
 
 ## 최종 보고서 링크
 
-- [1팀 최종 보고서]("https://charming-power-d0c.notion.site/1-_-3d5a35cd00a9808aa7e0cabe17106cbd?source=copy_link")
+- [1팀 최종 보고서](https://charming-power-d0c.notion.site/1-_-3d5a35cd00a9808aa7e0cabe17106cbd?source=copy_link)
 
 ## 협업일지 링크
 
-- [최승원 협업일지]("https://charming-power-d0c.notion.site/3c7a35cd00a98059a800dc8cf0f6f03e?source=copy_link")
-- [이형기 협업일지]("https://charming-power-d0c.notion.site/3c7a35cd00a980e29d3edfac6a8c3239?source=copy_link")
-- [서동혁 협업일지]("https://charming-power-d0c.notion.site/3c7a35cd00a980d3be8dee2c9f6cccf0?source=copy_link")
-- [김완수 협업일지]("https://charming-power-d0c.notion.site/3c7a35cd00a98060835ae0f599c7152f?source=copy_link")
-- [권순균 협업일지]("https://charming-power-d0c.notion.site/3c7a35cd00a980acb9e8fa6e4bfa5ab5?source=copy_link")
+- [최승원 협업일지](https://charming-power-d0c.notion.site/3c7a35cd00a98059a800dc8cf0f6f03e?source=copy_link)
+- [이형기 협업일지](https://charming-power-d0c.notion.site/3c7a35cd00a980e29d3edfac6a8c3239?source=copy_link)
+- [서동혁 협업일지](https://charming-power-d0c.notion.site/3c7a35cd00a980d3be8dee2c9f6cccf0?source=copy_link)
+- [김완수 협업일지](https://charming-power-d0c.notion.site/3c7a35cd00a98060835ae0f599c7152f?source=copy_link)
+- [권순균 협업일지](https://charming-power-d0c.notion.site/3c7a35cd00a980acb9e8fa6e4bfa5ab5?source=copy_link)
