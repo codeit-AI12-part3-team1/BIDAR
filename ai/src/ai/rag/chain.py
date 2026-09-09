@@ -35,7 +35,13 @@ from typing import Any
 #  ai/notebooks/rfp_rag_generation_baseline_qwen3.ipynb 참고)
 # ---------------------------------------------------------------------------
 
-MODEL_NAME = "Qwen/Qwen3-14B-AWQ"
+# 2026-09-09 채택 : Qwen3-14B-GPTQ-Int4
+#   동일 조건(STANDARD + chroma:std_dev, 프롬프트 v2, 공통 8문항 / Critical Fact 24건)에서
+#   AWQ 대비 핵심사실 17/24 (AWQ 16/24), 조건커버 10/17 (AWQ 8/17),
+#   근거성 0.9444 (AWQ 0.9333), 문항당 70.27초 (AWQ 74.95초), operator 역전 0건 동일.
+#   Qwen 공식 계정에는 Qwen3-14B GPTQ 가 없다(401). JunHowie 재배포본이며 출처 표기가 필요하다.
+#   근거 : 보고용/모델선정_GPTQ_20260909/
+MODEL_NAME = "JunHowie/Qwen3-14B-GPTQ-Int4"
 DEVICE = "cuda:0"
 CONTEXT_WINDOW = 32_768
 
