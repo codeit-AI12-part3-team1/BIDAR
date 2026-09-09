@@ -16,57 +16,55 @@
 
 | 항목 | 값 | 위치 |
 |---|---|---|
-| 모델 | **`JunHowie/Qwen3-14B-GPTQ-Int4`** | `chain.py` `MODEL_NAME` |
-| 디바이스 | `cuda:0` (하드코딩) | `chain.py:37` |
-| 컨텍스트 윈도우 | 32,768 | `chain.py:38` |
-| top_k | 5 | `chain.py:40` |
-| temperature | 0.1 | `chain.py:41` |
-| top_p | 1.0 | `chain.py:42` |
-| max_tokens (로컬) | **2,048** | `chain.py` `DEFAULT_MAX_TOKENS_LOCAL` |
-| max_tokens (API) | 1,024 | `chain.py` `DEFAULT_MAX_TOKENS_API` |
-| thinking | ON | `chain.py:44` |
-| 히스토리 턴 상한 | 3턴 (user+assistant 한 쌍 = 1턴) | `chain.py:48` |
-| 히스토리 글자 상한 | 2,000자 | `chain.py:49` |
+| 모델 | **`JunHowie/Qwen3-14B-GPTQ-Int4`** | `chain.py:44` `MODEL_NAME` |
+| 디바이스 | `cuda:0` (하드코딩) | `chain.py:45` `DEVICE` |
+| 컨텍스트 윈도우 | 32,768 | `chain.py:46` `CONTEXT_WINDOW` |
+| top_k | 5 | `chain.py:100` `DEFAULT_TOP_K` |
+| temperature | 0.1 | `chain.py:101` `DEFAULT_TEMPERATURE` |
+| top_p | 1.0 | `chain.py:102` `DEFAULT_TOP_P` |
+| max_tokens (로컬) | **2,048** | `chain.py:108` `DEFAULT_MAX_TOKENS_LOCAL` |
+| max_tokens (API) | 1,024 | `chain.py:109` `DEFAULT_MAX_TOKENS_API` |
+| thinking | ON | `chain.py:111` `DEFAULT_ENABLE_THINKING` |
+| 히스토리 턴 상한 | 3턴 (user+assistant 한 쌍 = 1턴) | `chain.py:115` `DEFAULT_MAX_HISTORY_TURNS` |
+| 히스토리 글자 상한 | 2,000자 | `chain.py:116` `DEFAULT_MAX_HISTORY_CHARS` |
+
+줄 번호는 `chain.py` **604줄 기준(2026-09-09)** 입니다. 상수 이름을 같이 적어 뒀으니 줄이 밀리면 이름으로 찾습니다.
 
 전부 베이스라인 측정에서 확정한 값입니다.
 
-> **2026-09-09 변경 (1) — 모델을 GPTQ-Int4 로 교체했습니다.**
->
-> 동일 조건(STANDARD 코퍼스 + `chroma:std_dev` 실검색 + 프롬프트 v2,
-> 공통 8문항 / Critical Fact 24건 / 조건 17건)에서 측정했습니다.
->
-> | | Qwen3-14B-AWQ | **Qwen3-14B-GPTQ-Int4** |
-> |---|---|---|
-> | 핵심사실 | 16/24 | **17/24** |
-> | 조건커버 | 8/17 | **10/17** |
-> | 근거성 | 0.9333 | **0.9444** |
-> | 인용 | 0.9333 | 0.9167 |
-> | operator 역전 | 0 | 0 |
-> | 문항당 초 | 74.95s | **70.27s** |
->
-> Critical Fact 24건 기준이라 1건이 0.0417 을 움직입니다. 정확도 차이는 표본상
-> 유의하지 않으며, 조건커버 +2 와 지연 −4.68초가 채택 근거입니다.
->
-> **Qwen 공식 계정에는 Qwen3-14B GPTQ 가 없습니다**(비로그인 접근 시 401 = 저장소 없음).
-> `JunHowie` 재배포본이며 보고서·발표에 출처를 표기해야 합니다.
-> 근거 : `보고용/모델선정_GPTQ_20260909/`
+### 1-1. 2026-09-09 변경 (1) — 모델을 GPTQ-Int4 로 교체
 
-> **2026-09-09 변경 (2)** — `max_tokens` 를 로컬 / API 로 분리했습니다.
-> 하나로 묶여 있어 §10-4 의 문제가 로컬에서도 그대로 발생했습니다.
->
-> | | 값 | 이유 |
-> |---|---|---|
-> | 로컬 (시나리오 A) | 1,024 → **2,048** | 토큰 비용이 0 인데 API 통제값에 묶여 있었다 |
-> | API (시나리오 B) | 1,024 (유지) | gpt-5 계열은 reasoning 토큰이 `max_completion_tokens` 에 포함된다 |
->
-> **실측 근거** — `qwen3-14b-gptq`, STANDARD + `chroma:std_dev`, thinking ON, 15문항:
-> G013 이 출력 1,024 토큰을 전부 소진하고 추론 중간에서 잘려 `answer` 에 도달하지 못했습니다.
-> `QUALIFICATION_CONDITION` 유형 정확도 하락(89% → 11%)의 주원인입니다.
->
-> `generate_answer(max_tokens=None)` 이면 backend 에 맞춰 자동 선택합니다.
-> 명시 인자는 그대로 우선합니다.
+동일 조건(STANDARD 코퍼스 + `chroma:std_dev` 실검색 + 프롬프트 v2, 공통 8문항 / Critical Fact 24건 / 조건 17건)에서 측정했습니다.
 
-모델은 **첫 호출 때 한 번만** GPU 에 올라가 모듈 전역에 캐시됩니다 (`chain.py:63-81`).
+| | Qwen3-14B-AWQ | **Qwen3-14B-GPTQ-Int4** |
+|---|---|---|
+| 핵심사실 | 16/24 | **17/24** |
+| 조건커버 | 8/17 | **10/17** |
+| 근거성 | 0.9333 | **0.9444** |
+| 인용 | 0.9333 | 0.9167 |
+| operator 역전 | 0 | 0 |
+| 문항당 초 | 74.95s | **70.27s** |
+
+Critical Fact 24건 기준이라 1건이 0.0417 을 움직입니다. 정확도 차이는 표본상 유의하지 않으며, **조건커버 +2 와 지연 −4.68초가 채택 근거**입니다.
+
+**Qwen 공식 계정에는 Qwen3-14B GPTQ 가 없습니다**(비로그인 접근 시 401 = 저장소 없음). `JunHowie` 재배포본이며 **보고서·발표에 출처를 표기해야 합니다.**
+
+근거 : `보고용/모델선정_GPTQ_20260909/`
+
+### 1-2. 2026-09-09 변경 (2) — `max_tokens` 를 로컬 / API 로 분리
+
+하나로 묶여 있어 §10-4 의 문제가 로컬에서도 그대로 발생했습니다.
+
+| | 값 | 이유 |
+|---|---|---|
+| 로컬 (시나리오 A) | 1,024 → **2,048** | 토큰 비용이 0 인데 API 통제값에 묶여 있었다 |
+| API (시나리오 B) | 1,024 (유지) | gpt-5 계열은 reasoning 토큰이 `max_completion_tokens` 에 포함된다 |
+
+**실측 근거** — `qwen3-14b-gptq`, STANDARD + `chroma:std_dev`, thinking ON, 15문항: G013 이 출력 1,024 토큰을 전부 소진하고 추론 중간에서 잘려 `answer` 에 도달하지 못했습니다. `QUALIFICATION_CONDITION` 유형 정확도 하락(89% → 11%)의 주원인입니다.
+
+`generate_answer(max_tokens=None)` 이면 backend 에 맞춰 자동 선택합니다. 명시 인자는 그대로 우선합니다.
+
+모델은 **첫 호출 때 한 번만** GPU 에 올라가 모듈 전역에 캐시됩니다 (`chain.py:131` `_model` / `chain.py:136-156` `load_model()`).
 
 ---
 
@@ -83,12 +81,17 @@ result = generate_answer(
     enable_thinking=True,
     temperature=0.1,
     top_p=1.0,
-    max_tokens=1024,
+    max_tokens=None,          # None 이면 backend 에 맞춰 자동 (로컬 2048 / API 1024)
     history=None,
     max_history_turns=3,
     max_history_chars=2000,
+    backend=None,             # None 이면 AI_GENERATOR_BACKEND 환경변수, 기본 "local"
 )
 ```
+
+**`max_tokens` 의 기본값은 `None` 입니다.** 숫자를 직접 넘기면 그 값이 그대로 쓰이므로,
+로컬에서 `1024` 를 명시하면 §10-4 의 잘림 문제가 다시 발생합니다. 특별한 이유가 없으면
+넘기지 마십시오.
 
 | 함수 | 하는 일 |
 |---|---|
@@ -102,7 +105,7 @@ result = generate_answer(
 {"answer": str, "sources": list[dict], "abstained": bool}
 ```
 
-세 키만 있습니다. `chain.py:305-309`.
+세 키만 있습니다. `chain.py:598-603` 반환문.
 
 ### 입력 `hits` 계약
 
@@ -112,9 +115,9 @@ result = generate_answer(
 {"chunk_id": str, "score": float, "text": str}
 ```
 
-`text` 를 채우는 것은 retriever 쪽 책임입니다. 생성기는 `top_k` 개까지만 쓰고 나머지는 버립니다 (`chain.py:93-106`).
+`text` 를 채우는 것은 retriever 쪽 책임입니다. 생성기는 `top_k` 개까지만 쓰고 나머지는 버립니다 (`chain.py:305` `_normalize_hits()`).
 
-선택 필드 `rank / document_id / section_path / requirement_ids / block_ids` 는 있으면 쓰고 없으면 기본값으로 채웁니다. `section_path` 와 `requirement_ids` 가 비면 프롬프트에 `(section: - / requirement: -)` 로 들어갑니다 (`chain.py:109-120`).
+선택 필드 `rank / document_id / section_path / requirement_ids / block_ids` 는 있으면 쓰고 없으면 기본값으로 채웁니다. `section_path` 와 `requirement_ids` 가 비면 프롬프트에 `(section: - / requirement: -)` 로 들어갑니다 (`chain.py:314`, `chain.py:326`).
 
 ### 예외
 
@@ -140,7 +143,7 @@ answer: str = predict(query, document_id)
 
 ## 4. 프롬프트
 
-`src/ai/rag/prompts/` 의 텍스트 파일 2개를 **모듈 import 시점에** 읽습니다 (`chain.py:52-53`).
+`src/ai/rag/prompts/` 의 텍스트 파일 2개를 **모듈 import 시점에** 읽습니다 (`chain.py:118-120`).
 
 | 파일 | 크기 | 내용 |
 |---|---|---|
@@ -171,7 +174,7 @@ system  ← system_prompt.txt
 user    ← user_template.txt.format(document_id, context_block, question)
 ```
 
-`history` 정규화 규칙 (`chain.py:123-160`):
+`history` 정규화 규칙 (`chain.py:335-372` `_normalize_history()`):
 
 - `role` 이 `user`/`assistant` 가 아니거나 `content` 가 비었으면 버림
 - 최근 `max_turns × 2` 개 메시지만 남김
@@ -183,9 +186,9 @@ user    ← user_template.txt.format(document_id, context_block, question)
 
 ## 5. 출력 파싱
 
-Qwen3 는 `<think>...</think>` 를 정상적으로 열고 닫습니다. 다만 방어적으로 **닫는 태그만 나오는 케이스**도 처리합니다 (`chain.py:171-178`). 베이스라인에서 다른 모델(EXAONE)에서 실제로 관측된 실패 패턴입니다.
+Qwen3 는 `<think>...</think>` 를 정상적으로 열고 닫습니다. 다만 방어적으로 **닫는 태그만 나오는 케이스**도 처리합니다 (`chain.py:383-390` `_strip_think()`). 베이스라인에서 다른 모델(EXAONE)에서 실제로 관측된 실패 패턴입니다.
 
-파싱 순서 (`chain.py:181-212`):
+파싱 순서 (`chain.py:393-424` `_extract_json_obj()` / `_parse_output()`):
 
 1. `<think>` 블록 제거
 2. 코드펜스(` ```json `) 제거
@@ -196,6 +199,10 @@ Qwen3 는 `<think>...</think>` 를 정상적으로 열고 닫습니다. 다만 �
 ---
 
 ## 6. 모델 선정 근거
+
+**이 절은 2026-08-28 계열 선정 기록입니다.** 당시 후보는 `Qwen3-14B-AWQ` 였습니다.
+**현재 채택 모델은 `JunHowie/Qwen3-14B-GPTQ-Int4` 입니다**(§1 참고). 같은 Qwen3-14B 를 양자화 방식만 바꾼 것이며, AWQ→GPTQ 교체 근거는 §1-1 표에 있습니다.
+**아래 표를 현재 모델의 성능으로 읽으면 안 됩니다.**
 
 Qwen3-14B-AWQ vs EXAONE-4.0-32B-GPTQ, 동일 조건(gold-mock 15문항, top_k=5, thinking ON).
 
@@ -274,21 +281,38 @@ PYTHONPATH=src python scripts/verify_history.py
 | 항목 | 값 |
 |---|---|
 | 측정 환경 | RTX 3090 24 GiB, Windows |
-| Qwen3-14B-AWQ 피크 VRAM | 9.39 GiB |
+| **`Qwen3-14B-GPTQ-Int4` (현재 채택) 로드 직후** | **9.38 GiB** |
+| **같은 모델 생성 중 peak (allocated)** | **15.34 GiB** |
+| (참고) `Qwen3-14B-AWQ` 로드 직후 / peak | 9.38 / 15.33 GiB |
 | KURE-v1 (검색기) VRAM | 1.21 GiB |
-| 합계 | 10.60 GiB |
+| 서비스 경로 합계 (생성 peak + 검색기) | 약 16.55 GiB — L4 21 GiB 안 |
 | vLLM | Windows 공식 미지원. `transformers` 직접 로드 |
-| AWQ 커널 | `AwqGEMMTritonLinear` (triton fallback) |
+| GPTQ 커널 | `TritonV2Linear`. **첫 요청에서 커널 컴파일 + v1→v2 변환이 돌아 첫 응답만 느립니다** |
+| (참고) AWQ 커널 | `AwqGEMMTritonLinear` (triton fallback) |
 | MSVC (`cl.exe`) | 없어도 동작 |
 
-AWQ 로더는 `transformers` 버전에 따라 갈립니다.
+### 9-1. 양자화 로더 패키지 — 빠지면 기동이 안 됩니다
 
-| transformers | AWQ 로딩에 필요한 패키지 |
-|---|---|
-| 4.x | `autoawq` (`quantizer_awq.py` 가 `is_auto_awq_available()` 요구) |
-| 5.x | `gptqmodel>=5.0.0` (`quantizer_awq.py` 가 `is_gptqmodel_available()` 요구) |
+**현재 모델이 GPTQ 이므로 `optimum` 이 필수입니다.**
 
-`pyproject.toml` 에 둘 다 들어 있어 어느 쪽 버전이 깔려도 로더가 있습니다.
+| 양자화 | 필요 패키지 | 없을 때 |
+|---|---|---|
+| **GPTQ (현재 채택)** | **`optimum`** | `ImportError: Loading a GPTQ quantized model requires optimum` 로 **기동 실패** (실측 2026-09-09, 서버) |
+| AWQ + transformers 4.x | `autoawq` (`quantizer_awq.py` 가 `is_auto_awq_available()` 요구) | AWQ 로드 실패 |
+| AWQ + transformers 5.x | `gptqmodel>=5.0.0` (`quantizer_awq.py` 가 `is_gptqmodel_available()` 요구) | AWQ 로드 실패 |
+
+`pyproject.toml` 에 `autoawq` · `gptqmodel` · `optimum` 셋 다 넣어 뒀습니다(2026-09-09).
+**모델을 바꿀 때는 이 표를 같이 확인하십시오.** GPTQ 로 바꾸면서 `optimum` 을 빠뜨려
+서버가 기동에 실패한 적이 있습니다.
+
+배포 서버에 이미 깔린 환경을 고칠 때는:
+
+```bash
+<venv>/bin/pip install optimum
+<venv>/bin/python -c "import optimum, gptqmodel; print(optimum.__version__, gptqmodel.__version__)"
+```
+
+GPTQ 가중치는 약 **9.30 GiB** 를 새로 내려받습니다. 디스크 여유를 먼저 보십시오.
 
 ---
 
@@ -296,8 +320,8 @@ AWQ 로더는 `transformers` 버전에 따라 갈립니다.
 
 | # | 내용 |
 |---|---|
-| 1 | `chain.py:37` `DEVICE = "cuda:0"` 가 하드코딩입니다. 환경변수 오버라이드가 없어 GPU 없는 환경에서는 `load_model()` 이 실패합니다 |
-| 2 | AWQ 양자화 모델은 GPU 를 요구합니다. `transformers` 4.x 의 AWQ 로더는 CUDA/XPU 가 없으면 `RuntimeError: GPU is required to run AWQ quantized model` 로 막습니다 |
+| 1 | `chain.py:45` `DEVICE = "cuda:0"` 가 하드코딩입니다. 환경변수 오버라이드가 없어 GPU 없는 환경에서는 `load_model()` 이 실패합니다 |
+| 2 | **양자화 모델(GPTQ·AWQ 공통)은 GPU 를 요구합니다.** `transformers` 4.x 의 AWQ 로더는 CUDA/XPU 가 없으면 `RuntimeError: GPU is required to run AWQ quantized model` 로 막고, GPTQ 는 `optimum` 이 없으면 `ImportError` 로 막습니다 (§9-1) |
 | 3 | **토큰 단위 스트리밍이 없습니다.** `generate_answer()` 는 생성이 끝난 뒤 완성된 답변을 돌려줍니다. 스트리밍이 필요하면 `streamer` 를 붙여야 합니다 |
 | 4 | thinking 토큰이 `max_tokens` 예산을 함께 씁니다. 사고가 길어지면 뒤에 나올 JSON 이 잘려 파싱이 실패합니다 (베이스라인에서 EXAONE ON 이 이 경로로 형식 준수 60% 를 기록). **2026-09-09 로컬 예산을 2,048 로 올려 완화했으나 없어지지는 않았습니다** — 같은 조건에서 G013 이 1,024 를 소진해 답변 미도달했습니다 (§1 참고) |
 | 5 | `hits` 에 `section_path` / `requirement_ids` 가 없으면 프롬프트에 `-` 로 들어갑니다. 파일 기반 hits 를 쓸 때 발생합니다 |
