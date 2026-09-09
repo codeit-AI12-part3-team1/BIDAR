@@ -35,7 +35,13 @@ from typing import Any
 #  ai/notebooks/rfp_rag_generation_baseline_qwen3.ipynb 참고)
 # ---------------------------------------------------------------------------
 
-MODEL_NAME = "Qwen/Qwen3-14B-AWQ"
+# 2026-09-09 채택 : Qwen3-14B-GPTQ-Int4
+#   동일 조건(STANDARD + chroma:std_dev, 프롬프트 v2, 공통 8문항 / Critical Fact 24건)에서
+#   AWQ 대비 핵심사실 17/24 (AWQ 16/24), 조건커버 10/17 (AWQ 8/17),
+#   근거성 0.9444 (AWQ 0.9333), 문항당 70.27초 (AWQ 74.95초), operator 역전 0건 동일.
+#   Qwen 공식 계정에는 Qwen3-14B GPTQ 가 없다(401). JunHowie 재배포본이며 출처 표기가 필요하다.
+#   근거 : 보고용/모델선정_GPTQ_20260909/
+MODEL_NAME = "JunHowie/Qwen3-14B-GPTQ-Int4"
 DEVICE = "cuda:0"
 CONTEXT_WINDOW = 32_768
 
@@ -94,7 +100,14 @@ ENV_PKG_SEARCH_DEPTH = 4
 DEFAULT_TOP_K = 5
 DEFAULT_TEMPERATURE = 0.1
 DEFAULT_TOP_P = 1.0
-DEFAULT_MAX_TOKENS = 1024
+# 2026-09-09 : 로컬(시나리오 A)과 API(시나리오 B)를 분리한다.
+#   로컬은 토큰 비용이 0 인데 API 비용 통제용 1024 에 함께 묶여 있었다.
+#   실측(qwen3-14b-gptq, STANDARD+chroma) : G013 이 출력 1024 토큰을 전부 소진하고
+#   추론 중간에서 잘려 answer 에 도달하지 못했다.
+#   API 는 gpt-5 계열 reasoning 토큰이 max_completion_tokens 에 포함되므로 1024 유지.
+DEFAULT_MAX_TOKENS_LOCAL = 2048
+DEFAULT_MAX_TOKENS_API = 1024
+DEFAULT_MAX_TOKENS = DEFAULT_MAX_TOKENS_LOCAL   # 하위호환 별칭
 DEFAULT_ENABLE_THINKING = True
 
 # 멀티턴 — 직전 대화를 몇 턴까지, 몇 글자까지 프롬프트에 넣을지.
@@ -509,7 +522,7 @@ def generate_answer(
     enable_thinking: bool = DEFAULT_ENABLE_THINKING,
     temperature: float = DEFAULT_TEMPERATURE,
     top_p: float = DEFAULT_TOP_P,
-    max_tokens: int = DEFAULT_MAX_TOKENS,
+    max_tokens: int | None = None,   # None 이면 백엔드에 맞춰 고른다
     history: list[dict] | None = None,
     max_history_turns: int = DEFAULT_MAX_HISTORY_TURNS,
     max_history_chars: int = DEFAULT_MAX_HISTORY_CHARS,
@@ -556,6 +569,10 @@ def generate_answer(
             f"알 수 없는 백엔드: {backend!r}. {VALID_BACKENDS} 중 하나여야 한다 "
             f"(AI_GENERATOR_BACKEND 환경변수)."
         )
+
+    if max_tokens is None:
+        max_tokens = (DEFAULT_MAX_TOKENS_API if backend == "api"
+                      else DEFAULT_MAX_TOKENS_LOCAL)
 
     norm_hits = _normalize_hits(hits, top_k)
     norm_history = _normalize_history(history, max_history_turns, max_history_chars)

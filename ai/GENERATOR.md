@@ -16,18 +16,55 @@
 
 | 항목 | 값 | 위치 |
 |---|---|---|
-| 모델 | `Qwen/Qwen3-14B-AWQ` | `chain.py:36` |
+| 모델 | **`JunHowie/Qwen3-14B-GPTQ-Int4`** | `chain.py` `MODEL_NAME` |
 | 디바이스 | `cuda:0` (하드코딩) | `chain.py:37` |
 | 컨텍스트 윈도우 | 32,768 | `chain.py:38` |
 | top_k | 5 | `chain.py:40` |
 | temperature | 0.1 | `chain.py:41` |
 | top_p | 1.0 | `chain.py:42` |
-| max_tokens | 1,024 | `chain.py:43` |
+| max_tokens (로컬) | **2,048** | `chain.py` `DEFAULT_MAX_TOKENS_LOCAL` |
+| max_tokens (API) | 1,024 | `chain.py` `DEFAULT_MAX_TOKENS_API` |
 | thinking | ON | `chain.py:44` |
 | 히스토리 턴 상한 | 3턴 (user+assistant 한 쌍 = 1턴) | `chain.py:48` |
 | 히스토리 글자 상한 | 2,000자 | `chain.py:49` |
 
 전부 베이스라인 측정에서 확정한 값입니다.
+
+> **2026-09-09 변경 (1) — 모델을 GPTQ-Int4 로 교체했습니다.**
+>
+> 동일 조건(STANDARD 코퍼스 + `chroma:std_dev` 실검색 + 프롬프트 v2,
+> 공통 8문항 / Critical Fact 24건 / 조건 17건)에서 측정했습니다.
+>
+> | | Qwen3-14B-AWQ | **Qwen3-14B-GPTQ-Int4** |
+> |---|---|---|
+> | 핵심사실 | 16/24 | **17/24** |
+> | 조건커버 | 8/17 | **10/17** |
+> | 근거성 | 0.9333 | **0.9444** |
+> | 인용 | 0.9333 | 0.9167 |
+> | operator 역전 | 0 | 0 |
+> | 문항당 초 | 74.95s | **70.27s** |
+>
+> Critical Fact 24건 기준이라 1건이 0.0417 을 움직입니다. 정확도 차이는 표본상
+> 유의하지 않으며, 조건커버 +2 와 지연 −4.68초가 채택 근거입니다.
+>
+> **Qwen 공식 계정에는 Qwen3-14B GPTQ 가 없습니다**(비로그인 접근 시 401 = 저장소 없음).
+> `JunHowie` 재배포본이며 보고서·발표에 출처를 표기해야 합니다.
+> 근거 : `보고용/모델선정_GPTQ_20260909/`
+
+> **2026-09-09 변경 (2)** — `max_tokens` 를 로컬 / API 로 분리했습니다.
+> 하나로 묶여 있어 §10-4 의 문제가 로컬에서도 그대로 발생했습니다.
+>
+> | | 값 | 이유 |
+> |---|---|---|
+> | 로컬 (시나리오 A) | 1,024 → **2,048** | 토큰 비용이 0 인데 API 통제값에 묶여 있었다 |
+> | API (시나리오 B) | 1,024 (유지) | gpt-5 계열은 reasoning 토큰이 `max_completion_tokens` 에 포함된다 |
+>
+> **실측 근거** — `qwen3-14b-gptq`, STANDARD + `chroma:std_dev`, thinking ON, 15문항:
+> G013 이 출력 1,024 토큰을 전부 소진하고 추론 중간에서 잘려 `answer` 에 도달하지 못했습니다.
+> `QUALIFICATION_CONDITION` 유형 정확도 하락(89% → 11%)의 주원인입니다.
+>
+> `generate_answer(max_tokens=None)` 이면 backend 에 맞춰 자동 선택합니다.
+> 명시 인자는 그대로 우선합니다.
 
 모델은 **첫 호출 때 한 번만** GPU 에 올라가 모듈 전역에 캐시됩니다 (`chain.py:63-81`).
 
@@ -262,6 +299,6 @@ AWQ 로더는 `transformers` 버전에 따라 갈립니다.
 | 1 | `chain.py:37` `DEVICE = "cuda:0"` 가 하드코딩입니다. 환경변수 오버라이드가 없어 GPU 없는 환경에서는 `load_model()` 이 실패합니다 |
 | 2 | AWQ 양자화 모델은 GPU 를 요구합니다. `transformers` 4.x 의 AWQ 로더는 CUDA/XPU 가 없으면 `RuntimeError: GPU is required to run AWQ quantized model` 로 막습니다 |
 | 3 | **토큰 단위 스트리밍이 없습니다.** `generate_answer()` 는 생성이 끝난 뒤 완성된 답변을 돌려줍니다. 스트리밍이 필요하면 `streamer` 를 붙여야 합니다 |
-| 4 | `max_tokens` 가 1,024 이고 thinking 토큰이 이 예산을 함께 씁니다. 사고가 길어지면 뒤에 나올 JSON 이 잘려 파싱이 실패합니다 (베이스라인에서 EXAONE ON 이 이 경로로 형식 준수 60% 를 기록) |
+| 4 | thinking 토큰이 `max_tokens` 예산을 함께 씁니다. 사고가 길어지면 뒤에 나올 JSON 이 잘려 파싱이 실패합니다 (베이스라인에서 EXAONE ON 이 이 경로로 형식 준수 60% 를 기록). **2026-09-09 로컬 예산을 2,048 로 올려 완화했으나 없어지지는 않았습니다** — 같은 조건에서 G013 이 1,024 를 소진해 답변 미도달했습니다 (§1 참고) |
 | 5 | `hits` 에 `section_path` / `requirement_ids` 가 없으면 프롬프트에 `-` 로 들어갑니다. 파일 기반 hits 를 쓸 때 발생합니다 |
 | 6 | 프롬프트 텍스트 파일을 import 시점에 읽으므로, wheel 로 빌드할 때 `prompts/*.txt` 가 패키지에 포함돼야 합니다 (`pyproject.toml` 의 `[tool.setuptools.package-data]`) |
