@@ -54,6 +54,20 @@
     </table>
 </div>
 
+## 프로젝트 구조
+
+```
+BIDAR/
+├── ai/           # 임베딩 생성, RAG 검색/생성, 모델 학습·추론 등 모델 관련 코드 전체
+├── backend/      # FastAPI 기반 API 서버. 라우팅/요청 검증/응답 조합 담당, ai 패키지를 import해 사용
+└── client/
+    └── android/  # Android 클라이언트. 공고/문서를 선택해 챗봇에게 질의응답하는 앱
+```
+
+- **ai**: 텍스트 임베딩, 벡터 검색 및 LLM 응답 생성(RAG), 별도 예측 모델의 학습·추론, 원본 RFP 데이터를 색인 가능한 형태로 가공하는 ingestion 파이프라인을 포함합니다. `backend`가 로컬 편집 가능 설치로 의존성에 추가해 같은 프로세스 안에서 직접 호출합니다.
+- **backend**: FastAPI 기반 API 서버로, 헬스체크·질의응답(`/chat`, SSE 스트리밍 지원)·문서 목록(`/documents`) 엔드포인트를 제공합니다. 요청을 받아 `services`에 위임하고, `services`가 `ai` 패키지의 함수를 호출해 결과를 조합합니다.
+- **client/android**: BID + RADAR 컨셉의 Android 클라이언트로, Clean Architecture(`app`/`data`/`domain`) 스타일로 구성되어 있으며 Splash·Home·Chat·Setting 화면을 통해 문서 목록 조회와 챗봇 대화 기능을 제공합니다.
+
 ## 파트별 문서 링크
 
 - [AI 모듈 문서](ai/README.md)
