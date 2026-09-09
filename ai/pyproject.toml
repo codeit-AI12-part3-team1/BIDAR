@@ -33,7 +33,8 @@ dependencies = [
     # chain.load_api_client() 가 환경변수가 비었을 때 이 파일을 찾는다
     # (규칙은 rfp_rag_generation_baseline_qwen3.ipynb 셀 13 과 동일).
     "python-dotenv",
-    "gptqmodel"
+    "gptqmodel",
+    "optimum"
 ]
 
 [project.optional-dependencies]
