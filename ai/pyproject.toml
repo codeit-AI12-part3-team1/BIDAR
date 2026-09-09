@@ -25,7 +25,14 @@ dependencies = [
     # chain.load_api_client() 가 환경변수가 비었을 때 이 파일을 찾는다
     # (규칙은 rfp_rag_generation_baseline_qwen3.ipynb 셀 13 과 동일).
     "python-dotenv",
-    "gptqmodel"
+    # 양자화 모델 로더.
+    #   autoawq   : AWQ (Qwen3-14B-AWQ, Qwen3-8B-AWQ)
+    #   gptqmodel : transformers 5.x AWQ 로더가 gptqmodel>=5.0.0 을 요구한다(실측 2026-09-01)
+    #   optimum   : GPTQ. 없으면 로드 시점에
+    #               "ImportError: Loading a GPTQ quantized model requires optimum" 로 죽는다
+    #               (실측 2026-09-09, 서버 기동 실패). MODEL_NAME 이 GPTQ 이므로 필수다.
+    "gptqmodel",
+    "optimum"
 ]
 
 [project.optional-dependencies]
