@@ -1,0 +1,11 @@
+{
+  "version": "data-split-v0.1",
+  "splits": {
+    "DEV": 0.70,
+    "REGRESSION": 0.15,
+    "FINAL_HOLDOUT": 0.15
+  },
+  "seed": 20260828,
+  "group_by": "duplicate_group_id",
+  "prevent_cross_split_sha": true
+}

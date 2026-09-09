@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "BIDAR AI package: embedding, RAG, model training/inference"
 requires-python = ">=3.11"
 dependencies = [
+    "olefile==0.47",
+    "pymupdf==1.26.4",
+    "pypdf==5.9.0",
     "torch>=2.1",
     # transformers>=4.51 이 AutoModelForCausalLM/AutoTokenizer 로딩 시
     # torchvision 을 요구한다(실측 2026-09-01, VM 기동 중 ModuleNotFoundError).
