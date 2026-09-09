@@ -83,6 +83,11 @@ def main() -> None:
     parser.add_argument("--sync-threshold", type=int, default=DEFAULT_SYNC_THRESHOLD)
     parser.add_argument("--keep-existing", action="store_true",
                         help="persist-dir 를 비우지 않는다 (기본은 비우고 시작)")
+    parser.add_argument("--embed-field", default="text",
+                        choices=("text", "retrieval_text"),
+                        help="임베딩할 필드. retrieval_text 는 사업명·발주기관이 앞에 붙은 "
+                             "검색 전용 텍스트로 LIVE v0.3 부터 제공된다. 저장되는 본문은 "
+                             "어느 쪽을 고르든 항상 원문(text)이다")
     args = parser.parse_args()
 
     bad = non_ascii_part(args.persist_dir)
@@ -103,6 +108,7 @@ def main() -> None:
         batch_size=args.batch_size,
         sync_threshold=args.sync_threshold,
         fresh=not args.keep_existing,
+        text_field=args.embed_field,
     )
     n_inproc = collection.count()
     del collection

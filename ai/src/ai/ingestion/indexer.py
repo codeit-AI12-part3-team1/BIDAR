@@ -25,7 +25,7 @@ from pathlib import Path
 
 import chromadb
 
-from ai.ingestion.loaders import build_document_lookup, load_jsonl
+from ai.ingestion.loaders import build_document_lookup, load_chunks
 
 DEFAULT_COLLECTION = "rfp_chunks"
 DEFAULT_BATCH_SIZE = 256
@@ -36,6 +36,10 @@ LIST_FIELDS = ("section_path", "block_ids", "requirement_ids")
 METADATA_FIELDS = (
     "document_id",
     "split",
+    # RETRIEVAL_HANDOFF 3.4 절이 버리지 말아 달라고 한 필드. v0.3 은 DEV/VAL 여부를
+    # split 과 semantic_role 두 곳에 담는다. 한 색인에 여러 split 을 넣었을 때
+    # 섞였는지 사후에 확인할 수 있어야 하므로 저장한다.
+    "semantic_role",
     "chunk_index",
     "section_path",
     "block_ids",
@@ -98,6 +102,7 @@ def build_index(
     sync_threshold: int = DEFAULT_SYNC_THRESHOLD,
     fresh: bool = True,
     progress: bool = True,
+    text_field: str = "text",
 ):
     """C0 청크를 색인한다.
 
@@ -109,10 +114,16 @@ def build_index(
         비우지 않으면 옛 세그먼트 폴더가 남아 어느 쪽이 현재 색인인지 알 수 없다.
     sync_threshold : int
         HNSW 를 디스크로 내리는 임계치. 0 이면 지정하지 않는다(Chroma 기본값).
+    text_field : str
+        임베딩할 필드. 기본은 "text"(원문).
+        LIVE v0.3 은 "retrieval_text"(제목·기관을 앞에 붙인 검색 전용 텍스트)도 주는데,
+        데이터팀 스키마가 그쪽을 우선하라고 권한다. 다만 무엇을 임베딩했는지에 따라
+        검색 결과가 달라지므로 색인마다 하나로 고정해야 하고, 바꾸면 재색인이 필요하다.
+        collection.documents 에는 어느 쪽을 임베딩했든 항상 원문(text)을 저장한다.
     """
     assert_index_path_ok(persist_dir)
 
-    chunks = load_jsonl(chunks_path)
+    chunks = load_chunks(chunks_path)
     document_lookup = build_document_lookup(documents_path) if documents_path else {}
 
     persist = Path(persist_dir)
@@ -138,14 +149,22 @@ def build_index(
             collection_name, metadata={"hnsw:space": "cosine"}
         )
 
+    missing_field = sum(1 for c in chunks if not (c.get(text_field) or "").strip())
+    if text_field != "text" and missing_field:
+        raise ValueError(
+            f"'{text_field}' 가 비어 있는 청크가 {missing_field}건 있다. "
+            f"이 데이터셋에는 해당 필드가 없거나 불완전하다 (--embed-field text 로 돌려라)."
+        )
+
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i : i + batch_size]
-        texts = [c["text"] for c in batch]
-        vectors = embedder.embed_texts(texts)
+        # 임베딩은 text_field 로 하되, 저장하는 본문은 항상 원문이다.
+        # 생성기가 프롬프트에 넣는 건 원문이어야 하기 때문이다.
+        vectors = embedder.embed_texts([c[text_field] for c in batch])
         collection.add(
             ids=[c["chunk_id"] for c in batch],
             embeddings=vectors,
-            documents=texts,
+            documents=[c["text"] for c in batch],
             metadatas=[chunk_to_metadata(c, document_lookup) for c in batch],
         )
         if progress:
