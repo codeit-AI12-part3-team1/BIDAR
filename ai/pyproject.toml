@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai"
+version = "0.1.0"
+description = "BIDAR AI package: embedding, RAG, model training/inference"
+requires-python = ">=3.11"
+dependencies = [
+    "olefile==0.47",
+    "pymupdf==1.26.4",
+    "pypdf==5.9.0",
+    "torch>=2.1",
+    # transformers>=4.51 이 AutoModelForCausalLM/AutoTokenizer 로딩 시
+    # torchvision 을 요구한다(실측 2026-09-01, VM 기동 중 ModuleNotFoundError).
+    # ai 코드 자체는 이미지 처리를 하지 않지만 transformers 내부 의존성이라 명시한다.
+    "torchvision",
+    "transformers>=4.51",
+    "accelerate>=0.30",
+    "autoawq",
+    # 검색(retrieval) 쪽 의존성. chromadb 는 버전을 고정한다 -
+    # 낮은 버전은 높은 버전이 만든 색인을 열지 못한다(실측 2026-09-01).
+    "chromadb==1.5.9",
+    "sentence-transformers",
+    # BM25(하이브리드 검색의 sparse 축) 토크나이저. 데이터팀 인덱스와 방식을 맞춘다
+    # (StandardDataset/index_config.json: "bm25_tokenizer": "kiwipiepy").
+    # 한국어는 조사를 떼지 않으면 "예산은" 과 "예산" 이 다른 낱말이 되어 BM25 가
+    # 사실상 동작하지 않는다. AI_RETRIEVER_HYBRID=0 이면 로드하지 않는다.
+    "kiwipiepy",
+    "openai",
+    # KEY.env / .env 에서 API 키를 읽는다. 팀이 키를 파일로 공유하고 있어
+    # chain.load_api_client() 가 환경변수가 비었을 때 이 파일을 찾는다
+    # (규칙은 rfp_rag_generation_baseline_qwen3.ipynb 셀 13 과 동일).
+    "python-dotenv",
+    # 양자화 모델 로더.
+    #   autoawq   : AWQ (Qwen3-14B-AWQ, Qwen3-8B-AWQ)
+    #   gptqmodel : transformers 5.x AWQ 로더가 gptqmodel>=5.0.0 을 요구한다(실측 2026-09-01)
+    #   optimum   : GPTQ. 없으면 로드 시점에
+    #               "ImportError: Loading a GPTQ quantized model requires optimum" 로 죽는다
+    #               (실측 2026-09-09, 서버 기동 실패). MODEL_NAME 이 GPTQ 이므로 필수다.
+    "gptqmodel",
+    "optimum"
+]
+
+[project.optional-dependencies]
+# scripts/ 아래 실험/검증용 스크립트에서만 쓰인다 (배포 패키지에는 포함 안 됨).
+dev = [
+    "numpy",
+    "matplotlib",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -68,3 +68,9 @@ out/
 # ===== OS =====
 .DS_Store
 Thumbs.db
+
+# ===== key =====
+.key/
+
+# ===== docs =====
+docs/**
