@@ -35,6 +35,32 @@ ai/
 │   ├── build_custom_dataset.py # Custom M0~M2 Dataset 생성
 │   ├── build_index.py       # ingestion 파이프라인 실행 (색인 재구축)
 │   └── evaluate.py          # RAG/모델 응답 품질 평가
+├── standard/
+│   ├── scripts/
+│   │   ├── build_standard_v0_crosswalk.py       # document_id ↔ canonical_doc_id ↔ split 매핑표 생성
+│   │   ├── build_standard_v0_blocks.py          # Document → Block → Chunk 3계층 구조 생성
+│   │   ├── build_standard_v0_split_slices.py    # DEV/VAL(REGRESSION) 원문 slice
+│   │   ├── seal_standard_holdout.py             # Holdout 신원(ID)만 확정/봉인
+│   │   ├── seal_standard_holdout_content.py     # Holdout 실제 문서/청크 내용 봉인
+│   │   └── README.md
+│   └── notebooks/
+│       ├── RFP_100_RAG_Pipeline.ipynb           # RFP100 원본(hwp/pdf) → RAG 데이터셋 빌드 (Kaggle)
+│       ├── RFP_LIVE_DEV.ipynb                   # G2B LIVE 98건 → handoff 패키지 생성 (Kaggle)
+│       └── README.md
+├── live_collect/
+│   ├── config.py                    # 공통 설정(API 키, 경로, 카테고리/키워드)
+│   ├── quota.py                     # 일일 API 호출 한도 관리
+│   ├── api_client.py                # G2B OpenAPI 래퍼(재시도/요청 로그)
+│   ├── collect_notices.py           # 1단계: 공고 목록 수집
+│   ├── select_targets.py            # 2단계: tier 선별(주간 라운드로빈)
+│   ├── collect_attachments.py       # 3단계: 첨부파일 URL 조회
+│   ├── download_files.py            # 4단계: 실다운로드 + magic-byte/SHA-256 검증
+│   ├── build_live_dev_inventory.py  # 후처리: 대표 문서 선정 인벤토리 생성
+│   ├── replace_candidates.py        # 운영 보정: 다운로드 실패 후보 교체
+│   ├── build_holdout_seal.py        # 거버넌스: 60건 → 최종 30건 확정/봉인
+│   ├── pyproject.toml / uv.lock      # uv 프로젝트 의존성
+│   ├── .env.example                 # API 키 설정 템플릿(실제 값 없음)
+│   └── README.md
 ├── tests/
 │   └── test_rag/
 ├── data/
@@ -83,6 +109,11 @@ Custom Frozen v0.1: Raw Source → Inventory → Duplicate Grouping → Split
 RFP100과 LIVE는 원천 문서의 cohort이고, Custom과 Standard는 Dataset 구성 방식입니다.
 현재 구현된 Custom 파이프라인은 `ai.ingestion.custom` namespace에 있으며, Standard
 파이프라인은 향후 별도 namespace에서 독립적으로 관리합니다.
+
+Standard 데이터셋(70/15/15 split, holdout 봉인) 재현 스크립트는 `ai/standard/scripts/`,
+빌드/처리 노트북은 `ai/standard/notebooks/`에 있습니다. 나라장터(G2B) LIVE 데이터 수집
+파이프라인은 `ai/live_collect/`에 별도로 있습니다. 각 폴더의 상세 설명은 폴더 안
+`README.md` 참고.
 
 `ai.ingestion.custom.parsers`는 원본 HWP5 또는 PDF 파일을 읽고 Unicode NFC로 정규화된
 primitive text block과 페이지·섹션·레코드 위치 정보를 반환합니다. 이 provenance는
