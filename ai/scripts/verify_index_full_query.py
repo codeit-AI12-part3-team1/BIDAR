@@ -32,19 +32,28 @@ import chromadb
 PROJECT_ROOT = Path(__file__).resolve().parent.parent  # ai/
 DATA_DIR = PROJECT_ROOT / "data"
 
-# 같은 벡터로 검색했을 때 이 거리 안이면 "내용이 동일한 청크"로 본다.
-# 색인에서 진짜 빠진 청크라면 내용이 다른 청크가 잡히므로 거리가 유의미하게 커진다.
-IDENTICAL_DIST = 1e-6
+# 자기 자신 대신 다른 청크가 1위로 잡혔을 때, 그게 "동점"인지 "진짜 누락"인지 가르는 기준.
+#
+# 1차 기준은 본문 비교다. 본문이 글자까지 같으면 벡터도 같으므로 어느 쪽이 1위가 되든
+# 무작위이고, 색인은 정상이다. 실측(2026-09-08): 본문이 동일한 청크 쌍의 거리가
+# 1.0133e-6 으로 나왔다. 정규화된 float32 내적이 정확히 1.0 이 안 되어 생기는 잔차라
+# 거리 임계값만으로 가르면 이런 쌍을 놓친다.
+#
+# 2차 기준이 거리다. 본문을 못 꺼낸 경우를 대비한 보조 장치이며, 실제로 다른 내용의
+# 청크가 잡히면 거리가 0.06~0.25 수준으로 자릿수가 달라지므로 1e-4 로도 충분히 갈린다.
+IDENTICAL_DIST = 1e-4
 
 
 def verify(collection, query_batch_size: int = 200) -> bool:
     print(f"collection.count() : {collection.count()}  (SQLite 레코드 수)")
 
-    # 저장된 id + 임베딩 + 메타데이터를 그대로 꺼냄 (재임베딩 없음, 빠름)
-    data = collection.get(include=["embeddings", "metadatas"])
+    # 저장된 id + 임베딩 + 메타데이터 + 본문을 그대로 꺼냄 (재임베딩 없음, 빠름)
+    data = collection.get(include=["embeddings", "metadatas", "documents"])
     all_ids = data["ids"]
     all_vectors = data["embeddings"]
     all_metadatas = data["metadatas"]
+    all_documents = data["documents"]
+    text_of = dict(zip(all_ids, all_documents))
     print(f"실제로 꺼내온 레코드 수 : {len(all_ids)}")
 
     # document_id 별로 묶는다 — chromadb 의 where 는 배치 전체에 공통 적용되므로
@@ -56,6 +65,7 @@ def verify(collection, query_batch_size: int = 200) -> bool:
     print()
 
     missing: list[str] = []
+    tied: list[str] = []
     done = 0
 
     for doc_id, indices in by_document.items():
@@ -76,17 +86,32 @@ def verify(collection, query_batch_size: int = 200) -> bool:
                     continue
 
                 found_id = found_ids[0]
-                distance = results["distances"][j][0]
+                if found_id == expected_id:
+                    continue
 
-                # 내용이 완전히 동일한 청크가 대신 1위로 잡히는 경우가 있다
-                # (한 문서 안에 같은 문구가 반복될 때). 색인은 정상이므로 통과시킨다.
-                if found_id != expected_id and distance >= IDENTICAL_DIST:
-                    missing.append(expected_id)
+                # 자기 자신이 아닌 청크가 1위. 본문이 같으면 동점이므로 색인은 정상이다
+                # (한 문서 안에 같은 문구가 반복될 때 생긴다).
+                if text_of.get(found_id) == text_of.get(expected_id):
+                    tied.append(expected_id)
+                    continue
+
+                # 본문이 다른데 밀렸다면 거리로 한 번 더 본다.
+                if results["distances"][j][0] < IDENTICAL_DIST:
+                    tied.append(expected_id)
+                    continue
+
+                missing.append(expected_id)
 
             done += len(index_batch)
             print(f"  검증 중... {done}/{len(all_ids)}")
 
     print()
+    if tied:
+        # 색인 문제는 아니지만 데이터 중복 신호라 눈에 보이게 남긴다.
+        print(f"참고  본문이 같은 쌍둥이 청크에 1위를 내준 건 : {len(tied)}개")
+        print(f"      예시 (최대 5개): {tied[:5]}")
+        print()
+
     if missing:
         print(f"FAIL  {len(missing)}개 청크가 검색 그래프에 반영 안 됨")
         print(f"      누락 예시 (최대 10개): {missing[:10]}")

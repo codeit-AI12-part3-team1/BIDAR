@@ -26,6 +26,7 @@ backend/
 │   ├── start.sh                # venv 활성화 + uvicorn 실행 (systemd ExecStart용)
 │   ├── stop.sh                 # 서버 종료 (systemd 서비스 stop, 또는 로컬 실행 중인 프로세스 kill)
 │   ├── deploy.sh                # git pull + 의존성 설치 + systemd 재시작 (재배포용)
+│   ├── monitor_resources.sh     # backend 프로세스의 RAM/VRAM 사용량을 CSV로 로깅
 │   └── bidar-backend.service    # systemd 유닛 템플릿
 ├── tests/
 │   └── test_api/               # 현재 테스트 코드 없음 (디렉터리만 존재)
@@ -73,7 +74,7 @@ IntelliJ 등 IDE 실행 설정을 쓸 경우 working directory를 반드시 `bac
 | Method | Path        | 설명                                   |
 |--------|-------------|----------------------------------------|
 | GET    | `/health`   | 헬스체크 → `{"code": 200, "msg": "success", "data": "ok"}` |
-| POST   | `/chat`     | 질의응답. 쿼리 파라미터 `query`(str), `document_id`(str), `use_streaming`(bool, 기본 False), `use_open_ai`(bool, 기본 False). `use_streaming=False`면 `BaseResponse[TokenResponse]`(`event=FULL`)를 반환하고, `True`면 SSE(`EventSourceResponse`)로 `SOS` → `TOKEN`(여러 번) → `EOS` 이벤트를 순서대로 스트리밍한다. 내부적으로 `prediction_service.predict()`/`predict_streaming()`이 `ai.models.predictor`를 호출하며, `use_open_ai=True`는 아직 미구현("미구현" 문자열 반환) |
+| POST   | `/chat`     | 질의응답. 쿼리 파라미터 `query`(str), `document_id`(str), `use_streaming`(bool, 기본 False), `use_open_ai`(bool, 기본 False). `use_streaming=False`면 `BaseResponse[TokenResponse]`(`event=FULL`)를 반환하고, `True`면 SSE(`EventSourceResponse`)로 `SOS` → `TOKEN`(여러 번) → `EOS` 이벤트를 순서대로 스트리밍한다. 내부적으로 `prediction_service.predict()`/`predict_streaming()`이 호출되며, `use_open_ai`는 `ai.models.predictor.predict(..., backend="api")`로 연결되어 구현되어 있다. 반면 `use_streaming=True`는 `ai` 모듈 연동이 아직 없어 `predict_streaming()`이 고정된 임시 문자열을 단어 단위로 흉내만 내어 반환한다(`ai.models.predictor`에 스트리밍 함수가 추가되면 교체 예정) |
 | GET    | `/documents`| 문서 목록 조회 → `BaseResponse[List[Document]]`. `document_service.get_documents()`가 `settings.documents_csv_path` CSV를 읽어 반환 |
 
 ## 배포 (systemd)
@@ -118,3 +119,18 @@ bash scripts/deploy.sh
 
 - **`status=217/USER`**: `bidar-backend.service`의 `User=`에 지정한 계정이 서버에 없는 경우입니다. `WorkingDirectory` / `ExecStart` / `User`를 실제 배포 경로·계정으로 수정했는지 확인하세요.
 - **`status=203/EXEC`**: `ExecStart`로 지정한 스크립트(`start.sh`)에 실행 권한이 없는 경우입니다. `chmod +x scripts/start.sh` 후 `sudo systemctl daemon-reload && sudo systemctl restart bidar-backend`로 재시도하세요.
+
+## 리소스 모니터링 (RAM/VRAM)
+
+동시 요청 부하에 따라 추론 리소스 사용량이 어떻게 변하는지 확인하려면 `scripts/monitor_resources.sh`를 사용합니다. `pgrep -f "uvicorn app.main:app"`로 backend 프로세스의 PID를 찾은 뒤, 그 PID의 RSS(RAM)와 `nvidia-smi`가 보고하는 프로세스별 VRAM 사용량을 같이 CSV로 기록합니다.
+
+```bash
+cd backend/scripts
+./monitor_resources.sh          # 1초 간격, Ctrl+C로 종료
+./monitor_resources.sh 0.5      # 0.5초 간격
+./monitor_resources.sh 1 60     # 1초 간격으로 60초만 기록 후 자동 종료
+```
+
+CSV 컬럼: `timestamp, pid, rss_mb, ram_used_mb, vram_proc_mb, vram_total_used_mb, vram_total_mb`
+
+이 스크립트를 켜둔 상태로 다른 터미널에서 `hey`/`wrk` 등으로 동시 요청을 보내면, `vram_proc_mb` 열의 증가 폭을 통해 동시 요청 수 대비 VRAM 사용량 변화를 비교할 수 있습니다. GPU 연산이 uvicorn과 별도의 서브프로세스(멀티프로세싱)에서 일어나는 구조로 바뀌면 `nvidia-smi`가 보고하는 PID가 달라질 수 있으니, `nvidia-smi`를 직접 실행해 compute-apps PID가 uvicorn PID와 일치하는지 먼저 확인하세요.
