@@ -74,7 +74,7 @@ IntelliJ 등 IDE 실행 설정을 쓸 경우 working directory를 반드시 `bac
 | Method | Path        | 설명                                   |
 |--------|-------------|----------------------------------------|
 | GET    | `/health`   | 헬스체크 → `{"code": 200, "msg": "success", "data": "ok"}` |
-| POST   | `/chat`     | 질의응답. 쿼리 파라미터 `query`(str), `document_id`(str), `use_streaming`(bool, 기본 False), `use_open_ai`(bool, 기본 False). `use_streaming=False`면 `BaseResponse[TokenResponse]`(`event=FULL`)를 반환하고, `True`면 SSE(`EventSourceResponse`)로 `SOS` → `TOKEN`(여러 번) → `EOS` 이벤트를 순서대로 스트리밍한다. 내부적으로 `prediction_service.predict()`/`predict_streaming()`이 `ai.models.predictor`를 호출하며, `use_open_ai=True`는 아직 미구현("미구현" 문자열 반환) |
+| POST   | `/chat`     | 질의응답. 쿼리 파라미터 `query`(str), `document_id`(str), `use_streaming`(bool, 기본 False), `use_open_ai`(bool, 기본 False). `use_streaming=False`면 `BaseResponse[TokenResponse]`(`event=FULL`)를 반환하고, `True`면 SSE(`EventSourceResponse`)로 `SOS` → `TOKEN`(여러 번) → `EOS` 이벤트를 순서대로 스트리밍한다. 내부적으로 `prediction_service.predict()`/`predict_streaming()`이 호출되며, `use_open_ai`는 `ai.models.predictor.predict(..., backend="api")`로 연결되어 구현되어 있다. 반면 `use_streaming=True`는 `ai` 모듈 연동이 아직 없어 `predict_streaming()`이 고정된 임시 문자열을 단어 단위로 흉내만 내어 반환한다(`ai.models.predictor`에 스트리밍 함수가 추가되면 교체 예정) |
 | GET    | `/documents`| 문서 목록 조회 → `BaseResponse[List[Document]]`. `document_service.get_documents()`가 `settings.documents_csv_path` CSV를 읽어 반환 |
 
 ## 배포 (systemd)
