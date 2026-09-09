@@ -1,2 +1,0 @@
-# BIDAR (BID + RADAR)
-

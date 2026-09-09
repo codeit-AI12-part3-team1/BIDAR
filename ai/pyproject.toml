@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "BIDAR AI package: embedding, RAG, model training/inference"
 requires-python = ">=3.11"
 dependencies = [
+    "olefile==0.47",
+    "pymupdf==1.26.4",
+    "pypdf==5.9.0",
     "torch>=2.1",
     # transformers>=4.51 이 AutoModelForCausalLM/AutoTokenizer 로딩 시
     # torchvision 을 요구한다(실측 2026-09-01, VM 기동 중 ModuleNotFoundError).
@@ -20,6 +23,11 @@ dependencies = [
     # 낮은 버전은 높은 버전이 만든 색인을 열지 못한다(실측 2026-09-01).
     "chromadb==1.5.9",
     "sentence-transformers",
+    # BM25(하이브리드 검색의 sparse 축) 토크나이저. 데이터팀 인덱스와 방식을 맞춘다
+    # (StandardDataset/index_config.json: "bm25_tokenizer": "kiwipiepy").
+    # 한국어는 조사를 떼지 않으면 "예산은" 과 "예산" 이 다른 낱말이 되어 BM25 가
+    # 사실상 동작하지 않는다. AI_RETRIEVER_HYBRID=0 이면 로드하지 않는다.
+    "kiwipiepy",
     "openai",
     # KEY.env / .env 에서 API 키를 읽는다. 팀이 키를 파일로 공유하고 있어
     # chain.load_api_client() 가 환경변수가 비었을 때 이 파일을 찾는다

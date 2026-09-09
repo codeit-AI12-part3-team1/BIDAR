@@ -23,7 +23,7 @@ def evaluate(query: str, document_id: str, use_streaming: bool = False, use_open
 
             for token in predict_streaming(query, document_id):
                 # FIXME: 실제 AI 모듈에서 구현한 방식에 따라 async 처리가 필요 (하단 sleep 제거 후 적용)
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(1)
                 yield {"data": success(data=TokenResponse(event=TokenEvent.TOKEN, token=token)).model_dump_json()}
 
             yield {"data": success(data=TokenResponse(event=TokenEvent.EOS, token="")).model_dump_json()}
