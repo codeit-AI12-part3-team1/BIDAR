@@ -1,5 +1,11 @@
 # BIDAR - Codeit 12기 Part3 중급 프로젝트
 
+<div align="center">
+    <img src="images/01.gif" height="400">&nbsp;&nbsp;&nbsp;&nbsp;<img src="images/02.gif" height="400">
+</div>
+
+[<img src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original" height="20"/> 시연영상](https://youtu.be/bkJX0W9pxkM?si=dVfwRlroXmzCkbia)
+
 ## 프로젝트 개요
 
 - 지금까지 학습하신 자연어처리 및 LLM 지식들을 토대로, **RAG 시스템을 구축하여 복잡한 형태의 기업 및 정부 제안요청서(RFP) 내용을 효과적으로 추출하고 요약하여 필요한 정보를 제공**하는 서비스를 만들어봅시다.
