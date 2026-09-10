@@ -74,6 +74,10 @@ BIDAR/
 - [Backend 모듈 문서](backend/README.md)
 - [Client 모듈 문서 (Android)](client/android/README.md)
 
+## 최종 보고서
+
+- [최종 보고서 파일 다운로드 (MyBOX)](https://naver.me/FM94v4hZ)
+
 ## 협업일지 링크
 
 - [최승원 협업일지](https://charming-power-d0c.notion.site/3c7a35cd00a98059a800dc8cf0f6f03e?source=copy_link)
